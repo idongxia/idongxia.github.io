@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="How to debug qemu devices简述qemu是一个开源的模拟处理器硬件设备的全虚拟化仿真器和虚拟器. KVM(kernel virtual machine)是一个Linux内核模块,为用户层提供硬件虚拟化的特性,QEMU通过kvm模拟一个目标架构的时候,可以实现与主机相同的架构,从而极大提高模拟效率。 漏洞挖掘要想实现从虚拟机里(以后统称guest主机)影响qemu,继而影响用户">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to debug qemu devices">
+<meta property="og:url" content="https://idongxia.github.io/2018/07/19/qemu/index.html">
+<meta property="og:site_name" content="idongxia">
+<meta property="og:description" content="How to debug qemu devices简述qemu是一个开源的模拟处理器硬件设备的全虚拟化仿真器和虚拟器. KVM(kernel virtual machine)是一个Linux内核模块,为用户层提供硬件虚拟化的特性,QEMU通过kvm模拟一个目标架构的时候,可以实现与主机相同的架构,从而极大提高模拟效率。 漏洞挖掘要想实现从虚拟机里(以后统称guest主机)影响qemu,继而影响用户">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://idongxia.github.io/qemu/vmware.png">
+<meta property="og:image" content="https://idongxia.github.io/qemu/pio.png">
+<meta property="og:image" content="https://idongxia.github.io/qemu/mmio.png">
+<meta property="og:image" content="https://idongxia.github.io/qemu/source.png">
+<meta property="og:updated_time" content="2018-07-19T04:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="How to debug qemu devices">
+<meta name="twitter:description" content="How to debug qemu devices简述qemu是一个开源的模拟处理器硬件设备的全虚拟化仿真器和虚拟器. KVM(kernel virtual machine)是一个Linux内核模块,为用户层提供硬件虚拟化的特性,QEMU通过kvm模拟一个目标架构的时候,可以实现与主机相同的架构,从而极大提高模拟效率。 漏洞挖掘要想实现从虚拟机里(以后统称guest主机)影响qemu,继而影响用户">
+<meta name="twitter:image" content="https://idongxia.github.io/qemu/vmware.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://idongxia.github.io/2018/07/19/qemu/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>How to debug qemu devices | idongxia</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">idongxia</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Navigationsleiste an/ausschalten">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Startseite</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archiv</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/07/19/qemu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="idongxia">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="idongxia">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">How to debug qemu devices
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2018-07-19 12:00:00" itemprop="dateCreated datePublished" datetime="2018-07-19T12:00:00+08:00">2018-07-19</time>
+            
+
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Kommentare: </span>
+                <a href="/2018/07/19/qemu/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/07/19/qemu/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="How-to-debug-qemu-devices"><a href="#How-to-debug-qemu-devices" class="headerlink" title="How to debug qemu devices"></a>How to debug qemu devices</h1><h2 id="简述"><a href="#简述" class="headerlink" title="简述"></a>简述</h2><p>qemu是一个开源的模拟处理器硬件设备的全虚拟化仿真器和虚拟器.</p>
+<p>KVM(kernel virtual machine)是一个Linux内核模块,为用户层提供硬件虚拟化的特性,QEMU通过kvm模拟一个目标架构的时候,可以实现与主机相同的架构,从而极大提高模拟效率。</p>
+<h3 id="漏洞挖掘"><a href="#漏洞挖掘" class="headerlink" title="漏洞挖掘"></a>漏洞挖掘</h3><p>要想实现从虚拟机里(以后统称guest主机)影响qemu,继而影响用户的主机(以后统称Host主机),就需要找到Guest主机与qemu通信的方法,再通过分析qemu对虚拟机传递数据的处理流程来发掘可利用点,比如虚拟机内传递一个异常值,导致qemu堆溢出,然后利用虚拟机传递布置的内容构造exploit,就可以实现控制qemu完成任意代码执行了。</p>
+<h2 id="测试环境搭建"><a href="#测试环境搭建" class="headerlink" title="测试环境搭建"></a>测试环境搭建</h2><p>首先我们下载最新版的qemu：<a href="http://www.qemu.org/" target="_blank" rel="noopener">下载地址</a></p>
+<p>如果使用物理机上的linux作为host最好，但是如果主机是windows，我们也可以采用windows上安装ubuntu虚拟机，然后ubuntu虚拟机中运行qemu来启动vm。 在window上vmware 12上安装ubuntu最新版本(之所以选用最新版本)，然后在ubuntu上编译安装qemu源码，以便后续调试qemu。</p>
+<h3 id="编译qemu"><a href="#编译qemu" class="headerlink" title="编译qemu:"></a><strong>编译qemu:</strong></h3><p>./configure –prefix=/usr –target-list=x86_64-softmmu –enable-kvm  –enable-debug –enable-debug-info –enable-modules –enable-vnc  –enable-trace-backends=log –disable-werror –disable-strip</p>
+<blockquote>
+<ul>
+<li>–target-list=x86_64-softmmu 只编译qemu x86_64版本</li>
+<li>–enable-kvm 开启qemu内核支持</li>
+<li>–enable-debug –enable-debug-info 保留qemu调试信息</li>
+<li>–disable-strip 保留qemu程序符号表,以便程序后续gdb调试与IDA逆向分析</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>configure过程可能出现缺少依赖的情况，比如zlib, glib-2.22,gthread-2.0等，可以通过以下命令安装所需的依赖  sudo apt-get install zlib1g-dev libglib2.0-dev libpixman-1-dev libfdt-dev (安装依赖后重新configure)</p>
+</blockquote>
+<p>make -j 16(多线程编译，节省时间)</p>
+<p>sudo make install</p>
+<h3 id="制作镜像："><a href="#制作镜像：" class="headerlink" title="制作镜像："></a><strong>制作镜像：</strong></h3><ol>
+<li>qemu-img create -f qcow2 ubuntu64.img 15G 制作空的磁盘文件</li>
+<li>在官网下载ubuntu_xxx.iso镜像</li>
+<li>将iso镜像安装到img磁盘文件中，脚本： <strong>qemu-system-x86_64 -enable-kvm -smp 4 -m 2048 -hda ./ubuntu64.img -boot d -cdrom ./ubuntu-16.04.2-desktop-amd64.iso</strong></li>
+</ol>
+<blockquote>
+<ul>
+<li>-enable-kvm 开启内核支持，加快qemu运行效率</li>
+<li>-cdrom ./ubuntu-16.04.2-desktop-amd64.iso iso挂载到光驱</li>
+<li>-hda ./ubuntu64.img  指定磁盘文件</li>
+<li>-boot d 从光驱启动</li>
+</ul>
+</blockquote>
+<p>如果没有配置kvm，会找不到kvm驱动，主机与vmware配置如下：</p>
+<ol>
+<li>确定CPU支持虚拟化后，要在BIOS中开启虚拟化，我的CPU是Intel的，BIOS是这样的：选Security, 再进Virtualization项，把各项设置成ENABLE，保存退出 。</li>
+<li>打开vmware的虚拟化引擎，如图： <img src="/qemu/vmware.png" alt="vmare配置选项"></li>
+<li>然后可以看到qemu启动，ubuntu启动界面，安装正常安装ubuntu系统安装即可。(PS: 电脑性能不够，在虚拟机里面运行虚拟机比较慢)</li>
+</ol>
+<h2 id="运行vm-确定目标设备"><a href="#运行vm-确定目标设备" class="headerlink" title="运行vm(确定目标设备)"></a>运行vm(确定目标设备)</h2><p>安装成功后，接下来启动vm，当然启动vm时，就有很多种的选择，特别是在设备的选择上，在host上输入 qemu-system-x86_64 -device ?</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br></pre></td><td class="code"><pre><span class="line">$ qemu-system-x86_64 -device ?</span><br><span class="line">Controller/Bridge/Hub devices:</span><br><span class="line">name &quot;i82801b11-bridge&quot;, bus PCI</span><br><span class="line">name &quot;ioh3420&quot;, bus PCI, desc &quot;Intel IOH device id 3420 PCIE Root Port&quot;</span><br><span class="line">name &quot;isabus-bridge&quot;, bus System</span><br><span class="line">name &quot;pci-bridge&quot;, bus PCI, desc &quot;Standard PCI Bridge&quot;</span><br><span class="line">name &quot;pci-bridge-seat&quot;, bus PCI, desc &quot;Standard PCI Bridge (multiseat)&quot;</span><br><span class="line">name &quot;pcie-root-port&quot;, bus PCI, desc &quot;PCI Express Root Port&quot;</span><br><span class="line">name &quot;pxb&quot;, bus PCI, desc &quot;PCI Expander Bridge&quot;</span><br><span class="line">name &quot;pxb-pcie&quot;, bus PCI, desc &quot;PCI Express Expander Bridge&quot;</span><br><span class="line">name &quot;usb-hub&quot;, bus usb-bus</span><br><span class="line">name &quot;vfio-pci-igd-lpc-bridge&quot;, bus PCI, desc &quot;VFIO dummy ISA/LPC bridge for IGD assignment&quot;</span><br><span class="line">name &quot;x3130-upstream&quot;, bus PCI, desc &quot;TI X3130 Upstream Port of PCI Express Switch&quot;</span><br><span class="line">name &quot;xio3130-downstream&quot;, bus PCI, desc &quot;TI X3130 Downstream Port of PCI Express Switch&quot;</span><br><span class="line"></span><br><span class="line">USB devices:</span><br><span class="line">name &quot;ich9-usb-ehci1&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-ehci2&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-uhci1&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-uhci2&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-uhci3&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-uhci4&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-uhci5&quot;, bus PCI</span><br><span class="line">name &quot;ich9-usb-uhci6&quot;, bus PCI</span><br><span class="line">name &quot;nec-usb-xhci&quot;, bus PCI</span><br><span class="line">name &quot;pci-ohci&quot;, bus PCI, desc &quot;Apple USB Controller&quot;</span><br><span class="line">name &quot;piix3-usb-uhci&quot;, bus PCI</span><br><span class="line">name &quot;piix4-usb-uhci&quot;, bus PCI</span><br><span class="line">name &quot;qemu-xhci&quot;, bus PCI</span><br><span class="line">name &quot;sysbus-ohci&quot;, bus System, desc &quot;OHCI USB Controller&quot;</span><br><span class="line">name &quot;usb-ehci&quot;, bus PCI</span><br><span class="line">name &quot;vt82c686b-usb-uhci&quot;, bus PCI</span><br><span class="line"></span><br><span class="line">Storage devices:</span><br><span class="line">name &quot;allwinner-ahci&quot;, bus System</span><br><span class="line">name &quot;am53c974&quot;, bus PCI, desc &quot;AMD Am53c974 PCscsi-PCI SCSI adapter&quot;</span><br><span class="line">name &quot;cfi.pflash01&quot;, bus System</span><br><span class="line">name &quot;dc390&quot;, bus PCI, desc &quot;Tekram DC-390 SCSI adapter&quot;</span><br><span class="line">name &quot;esp&quot;, bus System</span><br><span class="line">name &quot;floppy&quot;, bus floppy-bus, desc &quot;virtual floppy drive&quot;</span><br><span class="line">name &quot;ich9-ahci&quot;, bus PCI, alias &quot;ahci&quot;</span><br><span class="line">name &quot;ide-cd&quot;, bus IDE, desc &quot;virtual IDE CD-ROM&quot;</span><br><span class="line">name &quot;ide-drive&quot;, bus IDE, desc &quot;virtual IDE disk or CD-ROM (legacy)&quot;</span><br><span class="line">name &quot;ide-hd&quot;, bus IDE, desc &quot;virtual IDE disk&quot;</span><br><span class="line">name &quot;isa-fdc&quot;, bus ISA</span><br><span class="line">name &quot;isa-ide&quot;, bus ISA</span><br><span class="line">name &quot;lsi53c810&quot;, bus PCI</span><br><span class="line">name &quot;lsi53c895a&quot;, bus PCI, alias &quot;lsi&quot;</span><br><span class="line">name &quot;megasas&quot;, bus PCI, desc &quot;LSI MegaRAID SAS 1078&quot;</span><br><span class="line">name &quot;megasas-gen2&quot;, bus PCI, desc &quot;LSI MegaRAID SAS 2108&quot;</span><br><span class="line">name &quot;nvme&quot;, bus PCI, desc &quot;Non-Volatile Memory Express&quot;</span><br><span class="line">name &quot;piix3-ide&quot;, bus PCI</span><br><span class="line">name &quot;piix3-ide-xen&quot;, bus PCI</span><br><span class="line">name &quot;piix4-ide&quot;, bus PCI</span><br><span class="line">name &quot;pvscsi&quot;, bus PCI</span><br><span class="line">name &quot;scsi-block&quot;, bus SCSI, desc &quot;SCSI block device passthrough&quot;</span><br><span class="line">name &quot;scsi-cd&quot;, bus SCSI, desc &quot;virtual SCSI CD-ROM&quot;</span><br><span class="line">name &quot;scsi-disk&quot;, bus SCSI, desc &quot;virtual SCSI disk or CD-ROM (legacy)&quot;</span><br><span class="line">name &quot;scsi-generic&quot;, bus SCSI, desc &quot;pass through generic scsi device (/dev/sg*)&quot;</span><br><span class="line">name &quot;scsi-hd&quot;, bus SCSI, desc &quot;virtual SCSI disk&quot;</span><br><span class="line">name &quot;sdhci-pci&quot;, bus PCI</span><br><span class="line">name &quot;SUNW,fdtwo&quot;, bus System</span><br><span class="line">name &quot;sysbus-ahci&quot;, bus System</span><br><span class="line">name &quot;sysbus-fdc&quot;, bus System</span><br><span class="line">name &quot;usb-bot&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-mtp&quot;, bus usb-bus, desc &quot;USB Media Transfer Protocol device&quot;</span><br><span class="line">name &quot;usb-storage&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-uas&quot;, bus usb-bus</span><br><span class="line">name &quot;vhost-scsi&quot;, bus virtio-bus</span><br><span class="line">name &quot;vhost-scsi-pci&quot;, bus PCI</span><br><span class="line">name &quot;virtio-blk-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-blk-pci&quot;, bus PCI, alias &quot;virtio-blk&quot;</span><br><span class="line">name &quot;virtio-scsi-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-scsi-pci&quot;, bus PCI, alias &quot;virtio-scsi&quot;</span><br><span class="line"></span><br><span class="line">Network devices:</span><br><span class="line">name &quot;e1000&quot;, bus PCI, alias &quot;e1000-82540em&quot;, desc &quot;Intel Gigabit Ethernet&quot;</span><br><span class="line">name &quot;e1000-82544gc&quot;, bus PCI, desc &quot;Intel Gigabit Ethernet&quot;</span><br><span class="line">name &quot;e1000-82545em&quot;, bus PCI, desc &quot;Intel Gigabit Ethernet&quot;</span><br><span class="line">name &quot;e1000e&quot;, bus PCI, desc &quot;Intel 82574L GbE Controller&quot;</span><br><span class="line">name &quot;i82550&quot;, bus PCI, desc &quot;Intel i82550 Ethernet&quot;</span><br><span class="line">name &quot;i82551&quot;, bus PCI, desc &quot;Intel i82551 Ethernet&quot;</span><br><span class="line">name &quot;i82557a&quot;, bus PCI, desc &quot;Intel i82557A Ethernet&quot;</span><br><span class="line">name &quot;i82557b&quot;, bus PCI, desc &quot;Intel i82557B Ethernet&quot;</span><br><span class="line">name &quot;i82557c&quot;, bus PCI, desc &quot;Intel i82557C Ethernet&quot;</span><br><span class="line">name &quot;i82558a&quot;, bus PCI, desc &quot;Intel i82558A Ethernet&quot;</span><br><span class="line">name &quot;i82558b&quot;, bus PCI, desc &quot;Intel i82558B Ethernet&quot;</span><br><span class="line">name &quot;i82559a&quot;, bus PCI, desc &quot;Intel i82559A Ethernet&quot;</span><br><span class="line">name &quot;i82559b&quot;, bus PCI, desc &quot;Intel i82559B Ethernet&quot;</span><br><span class="line">name &quot;i82559c&quot;, bus PCI, desc &quot;Intel i82559C Ethernet&quot;</span><br><span class="line">name &quot;i82559er&quot;, bus PCI, desc &quot;Intel i82559ER Ethernet&quot;</span><br><span class="line">name &quot;i82562&quot;, bus PCI, desc &quot;Intel i82562 Ethernet&quot;</span><br><span class="line">name &quot;i82801&quot;, bus PCI, desc &quot;Intel i82801 Ethernet&quot;</span><br><span class="line">name &quot;ne2k_isa&quot;, bus ISA</span><br><span class="line">name &quot;ne2k_pci&quot;, bus PCI</span><br><span class="line">name &quot;pcnet&quot;, bus PCI</span><br><span class="line">name &quot;rocker&quot;, bus PCI, desc &quot;Rocker Switch&quot;</span><br><span class="line">name &quot;rtl8139&quot;, bus PCI</span><br><span class="line">name &quot;usb-bt-dongle&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-net&quot;, bus usb-bus</span><br><span class="line">name &quot;virtio-net-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-net-pci&quot;, bus PCI, alias &quot;virtio-net&quot;</span><br><span class="line">name &quot;vmxnet3&quot;, bus PCI, desc &quot;VMWare Paravirtualized Ethernet v3&quot;</span><br><span class="line"></span><br><span class="line">Input devices:</span><br><span class="line">name &quot;ipoctal232&quot;, bus IndustryPack, desc &quot;GE IP-Octal 232 8-channel RS-232 IndustryPack&quot;</span><br><span class="line">name &quot;isa-parallel&quot;, bus ISA</span><br><span class="line">name &quot;isa-serial&quot;, bus ISA</span><br><span class="line">name &quot;pci-serial&quot;, bus PCI</span><br><span class="line">name &quot;pci-serial-2x&quot;, bus PCI</span><br><span class="line">name &quot;pci-serial-4x&quot;, bus PCI</span><br><span class="line">name &quot;tpci200&quot;, bus PCI, desc &quot;TEWS TPCI200 IndustryPack carrier&quot;</span><br><span class="line">name &quot;usb-braille&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-ccid&quot;, bus usb-bus, desc &quot;CCID Rev 1.1 smartcard reader&quot;</span><br><span class="line">name &quot;usb-kbd&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-mouse&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-serial&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-tablet&quot;, bus usb-bus</span><br><span class="line">name &quot;usb-wacom-tablet&quot;, bus usb-bus, desc &quot;QEMU PenPartner Tablet&quot;</span><br><span class="line">name &quot;virtconsole&quot;, bus virtio-serial-bus</span><br><span class="line">name &quot;virtio-input-host-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-input-host-pci&quot;, bus PCI, alias &quot;virtio-input-host&quot;</span><br><span class="line">name &quot;virtio-keyboard-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-keyboard-pci&quot;, bus PCI, alias &quot;virtio-keyboard&quot;</span><br><span class="line">name &quot;virtio-mouse-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-mouse-pci&quot;, bus PCI, alias &quot;virtio-mouse&quot;</span><br><span class="line">name &quot;virtio-serial-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-serial-pci&quot;, bus PCI, alias &quot;virtio-serial&quot;</span><br><span class="line">name &quot;virtio-tablet-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-tablet-pci&quot;, bus PCI, alias &quot;virtio-tablet&quot;</span><br><span class="line">name &quot;virtserialport&quot;, bus virtio-serial-bus</span><br><span class="line"></span><br><span class="line">Display devices:</span><br><span class="line">name &quot;cirrus-vga&quot;, bus PCI, desc &quot;Cirrus CLGD 54xx VGA&quot;</span><br><span class="line">name &quot;isa-cirrus-vga&quot;, bus ISA</span><br><span class="line">name &quot;isa-vga&quot;, bus ISA</span><br><span class="line">name &quot;secondary-vga&quot;, bus PCI</span><br><span class="line">name &quot;sga&quot;, bus ISA, desc &quot;Serial Graphics Adapter&quot;</span><br><span class="line">name &quot;VGA&quot;, bus PCI</span><br><span class="line">name &quot;virtio-gpu-pci&quot;, bus PCI, alias &quot;virtio-gpu&quot;</span><br><span class="line">name &quot;virtio-vga&quot;, bus PCI</span><br><span class="line">name &quot;vmware-svga&quot;, bus PCI</span><br><span class="line"></span><br><span class="line">Sound devices:</span><br><span class="line">name &quot;AC97&quot;, bus PCI, desc &quot;Intel 82801AA AC97 Audio&quot;</span><br><span class="line">name &quot;adlib&quot;, bus ISA, desc &quot;Yamaha YM3812 (OPL2)&quot;</span><br><span class="line">name &quot;cs4231a&quot;, bus ISA, desc &quot;Crystal Semiconductor CS4231A&quot;</span><br><span class="line">name &quot;ES1370&quot;, bus PCI, desc &quot;ENSONIQ AudioPCI ES1370&quot;</span><br><span class="line">name &quot;gus&quot;, bus ISA, desc &quot;Gravis Ultrasound GF1&quot;</span><br><span class="line">name &quot;hda-duplex&quot;, bus HDA, desc &quot;HDA Audio Codec, duplex (line-out, line-in)&quot;</span><br><span class="line">name &quot;hda-micro&quot;, bus HDA, desc &quot;HDA Audio Codec, duplex (speaker, microphone)&quot;</span><br><span class="line">name &quot;hda-output&quot;, bus HDA, desc &quot;HDA Audio Codec, output-only (line-out)&quot;</span><br><span class="line">name &quot;ich9-intel-hda&quot;, bus PCI, desc &quot;Intel HD Audio Controller (ich9)&quot;</span><br><span class="line">name &quot;intel-hda&quot;, bus PCI, desc &quot;Intel HD Audio Controller (ich6)&quot;</span><br><span class="line">name &quot;sb16&quot;, bus ISA, desc &quot;Creative Sound Blaster 16&quot;</span><br><span class="line">name &quot;usb-audio&quot;, bus usb-bus</span><br><span class="line"></span><br><span class="line">Misc devices:</span><br><span class="line">name &quot;hyperv-testdev&quot;, bus ISA</span><br><span class="line">name &quot;i6300esb&quot;, bus PCI</span><br><span class="line">name &quot;ib700&quot;, bus ISA</span><br><span class="line">name &quot;isa-applesmc&quot;, bus ISA</span><br><span class="line">name &quot;isa-debug-exit&quot;, bus ISA</span><br><span class="line">name &quot;isa-debugcon&quot;, bus ISA</span><br><span class="line">name &quot;ivshmem&quot;, bus PCI, desc &quot;Inter-VM shared memory (legacy)&quot;</span><br><span class="line">name &quot;ivshmem-doorbell&quot;, bus PCI, desc &quot;Inter-VM shared memory&quot;</span><br><span class="line">name &quot;ivshmem-plain&quot;, bus PCI, desc &quot;Inter-VM shared memory&quot;</span><br><span class="line">name &quot;kvm-pci-assign&quot;, bus PCI, alias &quot;pci-assign&quot;, desc &quot;KVM-based PCI passthrough&quot;</span><br><span class="line">name &quot;pc-testdev&quot;, bus ISA</span><br><span class="line">name &quot;pci-testdev&quot;, bus PCI, desc &quot;PCI Test Device&quot;</span><br><span class="line">name &quot;pvpanic&quot;, bus ISA</span><br><span class="line">name &quot;vfio-pci&quot;, bus PCI, desc &quot;VFIO-based PCI device assignment&quot;</span><br><span class="line">name &quot;vhost-vsock-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;vhost-vsock-pci&quot;, bus PCI</span><br><span class="line">name &quot;virtio-balloon-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-balloon-pci&quot;, bus PCI, alias &quot;virtio-balloon&quot;</span><br><span class="line">name &quot;virtio-crypto-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-crypto-pci&quot;, bus PCI</span><br><span class="line">name &quot;virtio-mmio&quot;, bus System</span><br><span class="line">name &quot;virtio-rng-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;virtio-rng-pci&quot;, bus PCI, alias &quot;virtio-rng&quot;</span><br><span class="line"></span><br><span class="line">CPU devices:</span><br><span class="line">name &quot;486-x86_64-cpu&quot;</span><br><span class="line">name &quot;athlon-x86_64-cpu&quot;</span><br><span class="line">name &quot;base-x86_64-cpu&quot;</span><br><span class="line">name &quot;Broadwell-noTSX-x86_64-cpu&quot;</span><br><span class="line">name &quot;Broadwell-x86_64-cpu&quot;</span><br><span class="line">name &quot;Conroe-x86_64-cpu&quot;</span><br><span class="line">name &quot;core2duo-x86_64-cpu&quot;</span><br><span class="line">name &quot;coreduo-x86_64-cpu&quot;</span><br><span class="line">name &quot;Haswell-noTSX-x86_64-cpu&quot;</span><br><span class="line">name &quot;Haswell-x86_64-cpu&quot;</span><br><span class="line">name &quot;host-x86_64-cpu&quot;</span><br><span class="line">name &quot;IvyBridge-x86_64-cpu&quot;</span><br><span class="line">name &quot;kvm32-x86_64-cpu&quot;</span><br><span class="line">name &quot;kvm64-x86_64-cpu&quot;</span><br><span class="line">name &quot;max-x86_64-cpu&quot;</span><br><span class="line">name &quot;n270-x86_64-cpu&quot;</span><br><span class="line">name &quot;Nehalem-x86_64-cpu&quot;</span><br><span class="line">name &quot;Opteron_G1-x86_64-cpu&quot;</span><br><span class="line">name &quot;Opteron_G2-x86_64-cpu&quot;</span><br><span class="line">name &quot;Opteron_G3-x86_64-cpu&quot;</span><br><span class="line">name &quot;Opteron_G4-x86_64-cpu&quot;</span><br><span class="line">name &quot;Opteron_G5-x86_64-cpu&quot;</span><br><span class="line">name &quot;Penryn-x86_64-cpu&quot;</span><br><span class="line">name &quot;pentium-x86_64-cpu&quot;</span><br><span class="line">name &quot;pentium2-x86_64-cpu&quot;</span><br><span class="line">name &quot;pentium3-x86_64-cpu&quot;</span><br><span class="line">name &quot;phenom-x86_64-cpu&quot;</span><br><span class="line">name &quot;qemu32-x86_64-cpu&quot;</span><br><span class="line">name &quot;qemu64-x86_64-cpu&quot;</span><br><span class="line">name &quot;SandyBridge-x86_64-cpu&quot;</span><br><span class="line">name &quot;Skylake-Client-x86_64-cpu&quot;</span><br><span class="line">name &quot;Westmere-x86_64-cpu&quot;</span><br><span class="line"></span><br><span class="line">Uncategorized devices:</span><br><span class="line">name &quot;amd-iommu&quot;, bus System</span><br><span class="line">name &quot;AMDVI-PCI&quot;, bus PCI</span><br><span class="line">name &quot;edu&quot;, bus PCI</span><br><span class="line">name &quot;fw_cfg_io&quot;, bus System</span><br><span class="line">name &quot;fw_cfg_mem&quot;, bus System</span><br><span class="line">name &quot;generic-sdhci&quot;, bus System</span><br><span class="line">name &quot;hpet&quot;, bus System</span><br><span class="line">name &quot;i8042&quot;, bus ISA</span><br><span class="line">name &quot;igd-passthrough-isa-bridge&quot;, bus PCI, desc &quot;ISA bridge faked to support IGD PT&quot;</span><br><span class="line">name &quot;intel-iommu&quot;, bus System</span><br><span class="line">name &quot;ioapic&quot;, bus System</span><br><span class="line">name &quot;ipmi-bmc-extern&quot;</span><br><span class="line">name &quot;ipmi-bmc-sim&quot;</span><br><span class="line">name &quot;isa-ipmi-bt&quot;, bus ISA</span><br><span class="line">name &quot;isa-ipmi-kcs&quot;, bus ISA</span><br><span class="line">name &quot;kvm-ioapic&quot;, bus System</span><br><span class="line">name &quot;kvmclock&quot;, bus System</span><br><span class="line">name &quot;kvmvapic&quot;, bus System</span><br><span class="line">name &quot;loader&quot;, desc &quot;Generic Loader&quot;</span><br><span class="line">name &quot;mptsas1068&quot;, bus PCI, desc &quot;LSI SAS 1068&quot;</span><br><span class="line">name &quot;nvdimm&quot;, desc &quot;DIMM memory module&quot;</span><br><span class="line">name &quot;pc-dimm&quot;, desc &quot;DIMM memory module&quot;</span><br><span class="line">name &quot;sd-card&quot;, bus sd-bus</span><br><span class="line">name &quot;tpm-tis&quot;, bus ISA</span><br><span class="line">name &quot;unimplemented-device&quot;, bus System</span><br><span class="line">name &quot;virtio-gpu-device&quot;, bus virtio-bus</span><br><span class="line">name &quot;vmgenid&quot;</span><br></pre></td></tr></table></figure>
+
+<p>若想了解设备的使用信息可以这样:</p>
+<p>$ qemu-system-x86_64 -device mptsas1068,help</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$ qemu-system-x86_64 -device mptsas1068,help</span><br><span class="line">mptsas1068.rombar=uint32</span><br><span class="line">mptsas1068.x-pcie-lnksta-dllla=bool (on/off)</span><br><span class="line">mptsas1068.multifunction=bool (on/off)</span><br><span class="line">mptsas1068.msi=OnOffAuto (on/off/auto)</span><br><span class="line">mptsas1068.romfile=str</span><br><span class="line">mptsas1068.command_serr_enable=bool (on/off)</span><br><span class="line">mptsas1068.x-pcie-extcap-init=bool (on/off)</span><br><span class="line">mptsas1068.addr=int32 (Slot and optional function number, example: 06.0 or 06)</span><br><span class="line">mptsas1068.sas_address=uint64</span><br></pre></td></tr></table></figure>
+
+<p>通过以上命令，可以找到当前版本的qemu支持的所有设备类型和设备名称，以及各个设备的详细参数列表。</p>
+<p>选取想要测试的设备，在qemu启动vm时，指定设备名称。如我们想要测试vga显卡与ne2k_pci网卡，使用如下命令启动vm:</p>
+<p>$ qemu-system-x86_64 -enable-kvm -smp 1 -m 1024 -hda ./ubuntu64.img -boot c -vnc 0.0.0.0:8 -device VGA -device ne2k_pci &amp;</p>
+<blockquote>
+<ul>
+<li>-enable-kvm 开启内核支持，加快qemu运行效率</li>
+<li>-vnc 0.0.0.0:8 指定vm vnc端口为hostip:5908</li>
+<li>-device VGA -device ne2k_pci  指定待测试的显卡与网卡</li>
+<li>&amp; 程序后台启动，不启动qemu界面</li>
+</ul>
+</blockquote>
+<h2 id="确定设备对应的IO端口-IO内存"><a href="#确定设备对应的IO端口-IO内存" class="headerlink" title="确定设备对应的IO端口/IO内存"></a>确定设备对应的IO端口/IO内存</h2><p>在运行vm时，我们指定视频设备vga与网卡设备vmxnet3,那我们在运行的vm中来查看设备IO端口地址或者IO内存地址，然后我们可以通过读写设备PIO或者设备内存地址。然后我们通过gdb脚本来找到对应PIO端口/内存端口读写触发的处理函数。</p>
+<ol>
+<li>执行lspci -nnv，查看vm pci设备。 <img ser="/qemu/devices.png">) 这个设备对应的IO端口是 0xc000,大小为256(意味着最大可以inl(0xc000+255)).</li>
+<li>针对ne2k设备,从 lspci -nnv命令,我们知道其对应的bus信息是 00:04.0 ,我们也可以通过下列方式获取对应的IO内存和端口的信息.</li>
+</ol>
+<blockquote>
+<ul>
+<li><table>
+<thead>
+<tr>
+<th>cat /proc/ioports</th>
+<th>grep 00:04.0</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+</li>
+<li><table>
+<thead>
+<tr>
+<th>cat /proc/iomem</th>
+<th>grep 00:04.0</th>
+</tr>
+</thead>
+<tbody><tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+</blockquote>
+<h4 id="查看设备IO处理函数"><a href="#查看设备IO处理函数" class="headerlink" title="查看设备IO处理函数"></a>查看设备IO处理函数</h4><p>在host上执行ps -aux | grep qemu, 查看qemu进程PID(如：6666)，gdb -p 6666，为了方便操作编写gdb脚本：</p>
+<p><strong>gdbinit.txt</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">set confirm off</span><br><span class="line">set pagination off</span><br><span class="line">set disassembly-flavor intel</span><br><span class="line">handle SIGALRM nostop nopass noprint</span><br><span class="line">disp /i $pc</span><br><span class="line"></span><br><span class="line">define p</span><br><span class="line">si</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define o</span><br><span class="line">ni</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define l</span><br><span class="line">x/16i $arg0</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define ln</span><br><span class="line">x/16i</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define d</span><br><span class="line">x/16xg $arg0</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define dn</span><br><span class="line">x/16xg</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define ds</span><br><span class="line">x/s $arg0</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define dr</span><br><span class="line">print/x $$arg0</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define pv</span><br><span class="line">print/x &#123;int&#125;$arg0</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">define pc</span><br><span class="line">x/i $pc</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+
+<p>在断点处执行gdb脚本获取qemu程序中各IO地址与内存中对应的注册函数：(gdb脚本涉及太多的程序数据结构分析，在此不展开)</p>
+<p><strong>Qemu启动后所有的pio设备信息：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">set pagination off</span><br><span class="line">set $dispatch = address_space_io.dispatch</span><br><span class="line">set $sections = $dispatch-&gt;map-&gt;sections</span><br><span class="line">printf &quot;sections=0x%lx\n&quot;, $sections</span><br><span class="line"></span><br><span class="line">set $count = address_space_io.dispatch-&gt;map.sections_nb</span><br><span class="line">printf &quot;total %lu entries.\n&quot;, $count</span><br><span class="line">while ($count &gt; 0)</span><br><span class="line">    set $size = *(short*)(&amp;$sections-&gt;size)</span><br><span class="line">    set $addr = $sections-&gt;offset_within_address_space</span><br><span class="line">    printf &quot;port=0x%04lx, size=0x%04lx, next=0x%04lx, &quot;, $addr, $size, $addr + $size</span><br><span class="line"></span><br><span class="line">    set $mr = $sections-&gt;mr</span><br><span class="line">    set $ops = $mr-&gt;ops</span><br><span class="line">    set $pf_read = $ops</span><br><span class="line">    printf &quot;0x%016lx, &quot;, $pf_read</span><br><span class="line">    x/8xb $ops</span><br><span class="line"></span><br><span class="line">    set $count = $count - 1</span><br><span class="line">    set $sections = $sections + 1</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">printf &quot;total %lu entries.\n&quot;, $count</span><br></pre></td></tr></table></figure>
+
+<p>设备PIO信息截图：</p>
+<p><img src="/qemu/pio.png" alt="pio"></p>
+<p><strong>Qemu启动后所有的mmio设备信息：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">set pagination off</span><br><span class="line">set $dispatch = address_space_memory.dispatch</span><br><span class="line">set $sections = $dispatch-&gt;map-&gt;sections</span><br><span class="line">printf &quot;sections=0x%lx\n&quot;, $sections</span><br><span class="line"></span><br><span class="line">set $count = address_space_memory.dispatch-&gt;map.sections_nb</span><br><span class="line">printf &quot;total %lu entries.\n&quot;, $count</span><br><span class="line">while ($count &gt; 0)</span><br><span class="line">set $size = *(long*)(&amp;$sections-&gt;size)</span><br><span class="line">set $addr = $sections-&gt;offset_within_address_space</span><br><span class="line">printf &quot;addr=0x%08lx, size=0x%08lx, next=0x%08lx, &quot;, $addr, $size, $addr + $size</span><br><span class="line"></span><br><span class="line">set $mr = $sections-&gt;mr</span><br><span class="line">set $ops = $mr-&gt;ops</span><br><span class="line">set $pf_read = $ops</span><br><span class="line">printf &quot;0x%016lx, &quot;, $pf_read</span><br><span class="line">x/8xb $ops</span><br><span class="line"></span><br><span class="line">set $count = $count - 1</span><br><span class="line">set $sections = $sections + 1</span><br><span class="line">end</span><br><span class="line"></span><br><span class="line">printf &quot;total %lu entries.\n&quot;, $count</span><br></pre></td></tr></table></figure>
+
+<p>设备PIO信息截图：</p>
+<p><img src="/qemu/mmio.png" alt="mmio"></p>
+<p>打开source insight, 路径/hw/net/Ne2000.c,从pio信息图中得到ne2k_pci设备PIO端口的处理函数是ne2000_ops： <img src="/qemu/source.png" alt="source"></p>
+<p>在 .read = ne2000_read, .write =  ne2000_write,函数处打断点，然后编写程序读写PIO端口或者MMIO内存，就可以在断点处断下来，结合gdb调试以及IDA堆qemu可执行程序综合分析，就可以深入的堆qemu设备进行分析了。结合攻击模式库以及对漏洞的敏感度，进行漏洞挖掘工作。</p>
+<h3 id="交互代码"><a href="#交互代码" class="headerlink" title="交互代码"></a>交互代码</h3><p>MMIO读写驱动程序：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;sys/io.h&gt;</span><br><span class="line">void main()&#123;</span><br><span class="line">  iopl(3);</span><br><span class="line">  inb(0xc050);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//针对IO内存</span><br><span class="line">#include &lt;asm/io.h&gt;</span><br><span class="line">#include &lt;linux/module.h&gt;</span><br><span class="line">#include &lt;linux/ioport.h&gt;</span><br><span class="line">#include &lt;linux/random.h&gt;</span><br><span class="line"> </span><br><span class="line">long pmem; //注意这里不要使用指针类型,不然后面地址加偏移的时候很容易出错</span><br><span class="line">void m_init()&#123;</span><br><span class="line">	printk(&quot;m_init\n&quot;);</span><br><span class="line">	int i,cmd,cmd_size;</span><br><span class="line">	int va,offset;</span><br><span class="line">	pmem=ioremap(0xfebf0000,0x8000);//映射io内存</span><br><span class="line">	offset=0x10;//根据设备情况而定</span><br><span class="line">	if (pmem)&#123;</span><br><span class="line">	     writel(value,pmem+offset);//通常情况下都是写4字节,你也可以根据源码的处理方式选择</span><br><span class="line">	&#125;else printk(&quot;ioremap fail\n&quot;);</span><br><span class="line">	iounmap(pmem);</span><br><span class="line">	return;</span><br><span class="line">&#125;</span><br><span class="line">void m_exit()&#123;</span><br><span class="line">	printk(&quot;m_exit\n&quot;);</span><br><span class="line">	return;</span><br><span class="line">&#125;</span><br><span class="line">module_init(m_init);</span><br><span class="line">module_exit(m_exit);</span><br></pre></td></tr></table></figure>
+
+<h2 id="审计源码"><a href="#审计源码" class="headerlink" title="审计源码"></a>审计源码</h2><p>已经找到处理输入的文件了,怎么找到哪一个函数是第一个处理我们输入的函数呢??通用的方法:找包含 read,write  关键字的函数名.通过不断找函数的caller,我们最终会找到第一个处理的函数,而有的设备有多个映射IO内存和端口,就意味着有多个处理函数分别对应不同的内存和端口.自此能说的也不多了,你都已经知道怎么控制数据了,剩下就是去查看qemu怎么处理数据了.qemu在获取数据的时候也会通过调用Guest系统的内存来读取数据,处理guest地址转换的函数叫  dma_memory_read,dma_memory_write。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>qemu是个非常强大的软件，也是虚拟化、云计算的基础；在硬件模拟方面，模拟各平台设备；用于源码插桩，linux内核调试等。 以上总结要感谢实验室大牛莫老师指导，非常感谢！！！</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="http://www.tuicool.com/articles/MzqYbia" target="_blank" rel="noopener">QEMU漏洞挖掘</a></li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/05/05/gdb/" rel="next" title="some useful gdb skills">
+                <i class="fa fa-chevron-left"></i> some useful gdb skills
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/12/03/Xposed/" rel="prev" title="Use Xposed To Hook">
+                Use Xposed To Hook <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">idongxia</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">Artikel</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#How-to-debug-qemu-devices"><span class="nav-number">1.</span> <span class="nav-text">How to debug qemu devices</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简述"><span class="nav-number">1.1.</span> <span class="nav-text">简述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#漏洞挖掘"><span class="nav-number">1.1.1.</span> <span class="nav-text">漏洞挖掘</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试环境搭建"><span class="nav-number">1.2.</span> <span class="nav-text">测试环境搭建</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#编译qemu"><span class="nav-number">1.2.1.</span> <span class="nav-text">编译qemu:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#制作镜像："><span class="nav-number">1.2.2.</span> <span class="nav-text">制作镜像：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#运行vm-确定目标设备"><span class="nav-number">1.3.</span> <span class="nav-text">运行vm(确定目标设备)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#确定设备对应的IO端口-IO内存"><span class="nav-number">1.4.</span> <span class="nav-text">确定设备对应的IO端口/IO内存</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#查看设备IO处理函数"><span class="nav-number">1.4.0.1.</span> <span class="nav-text">查看设备IO处理函数</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#交互代码"><span class="nav-number">1.4.1.</span> <span class="nav-text">交互代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#审计源码"><span class="nav-number">1.5.</span> <span class="nav-text">审计源码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">1.6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">1.7.</span> <span class="nav-text">参考</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">idongxia</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/schemes/muse.js?v=7.1.2"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+  
+
+<script src="//cdn1.lncld.net/static/js/3.11.1/av-min.js"></script>
+
+
+
+<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+<script>
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'utzKntLleFpYpbLMukFBuRNb-gzGzoHsz',
+    appKey: 'QzvmcivNyJTepWaD1Fuwpuci',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: '' || 'zh-cn'
+  });
+</script>
+
+
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

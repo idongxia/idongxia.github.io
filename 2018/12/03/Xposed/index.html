@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="标题Xposed 简介Xposed做法：Xposed是通过hook方法的方式来实现，由于Xposed修改了系统在启动时加载的Zygote进程相关的逻辑以及加载的资源(并且所有应用的启动都是从Zygote进程中拷贝出来的)，因此几乎可以架空一切安全，做所有事情，包括修改系统行为。 hook的大概原理：hook方法是 XposedBridge 中的一个私有native方法 hookMethodNati">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Use Xposed To Hook">
+<meta property="og:url" content="https://idongxia.github.io/2018/12/03/Xposed/index.html">
+<meta property="og:site_name" content="idongxia">
+<meta property="og:description" content="标题Xposed 简介Xposed做法：Xposed是通过hook方法的方式来实现，由于Xposed修改了系统在启动时加载的Zygote进程相关的逻辑以及加载的资源(并且所有应用的启动都是从Zygote进程中拷贝出来的)，因此几乎可以架空一切安全，做所有事情，包括修改系统行为。 hook的大概原理：hook方法是 XposedBridge 中的一个私有native方法 hookMethodNati">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-12-03T04:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Use Xposed To Hook">
+<meta name="twitter:description" content="标题Xposed 简介Xposed做法：Xposed是通过hook方法的方式来实现，由于Xposed修改了系统在启动时加载的Zygote进程相关的逻辑以及加载的资源(并且所有应用的启动都是从Zygote进程中拷贝出来的)，因此几乎可以架空一切安全，做所有事情，包括修改系统行为。 hook的大概原理：hook方法是 XposedBridge 中的一个私有native方法 hookMethodNati">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://idongxia.github.io/2018/12/03/Xposed/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Use Xposed To Hook | idongxia</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">idongxia</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Navigationsleiste an/ausschalten">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Startseite</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archiv</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/12/03/Xposed/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="idongxia">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="idongxia">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Use Xposed To Hook
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2018-12-03 12:00:00" itemprop="dateCreated datePublished" datetime="2018-12-03T12:00:00+08:00">2018-12-03</time>
+            
+
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Kommentare: </span>
+                <a href="/2018/12/03/Xposed/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/12/03/Xposed/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h1><h1 id="Xposed-简介"><a href="#Xposed-简介" class="headerlink" title="Xposed 简介"></a>Xposed 简介</h1><h2 id="Xposed做法："><a href="#Xposed做法：" class="headerlink" title="Xposed做法："></a><strong>Xposed做法：</strong></h2><p>Xposed是通过hook方法的方式来实现，由于Xposed修改了系统在启动时加载的Zygote进程相关的逻辑以及加载的资源(并且所有应用的启动都是从Zygote进程中拷贝出来的)，因此几乎可以架空一切安全，做所有事情，包括修改系统行为。</p>
+<h2 id="hook的大概原理："><a href="#hook的大概原理：" class="headerlink" title="hook的大概原理："></a><strong>hook的大概原理：</strong></h2><p>hook方法是 XposedBridge 中的一个私有native方法 hookMethodNative  改变被hook方法的类型为native并且link方法实现到它自己的native方法中，并且对调用者透明，该native方法调用XposedBridge中的  handleHookedMethod 方法，将参数， this 引用等传进来，之后在回调回去，这样我们就可以在方法执行前后做任何的事情了。</p>
+<h1 id="Xposed-组件"><a href="#Xposed-组件" class="headerlink" title="Xposed 组件"></a>Xposed 组件</h1><h2 id="Xposed包含如下几个工程："><a href="#Xposed包含如下几个工程：" class="headerlink" title="Xposed包含如下几个工程："></a>Xposed包含如下几个工程：</h2><ol>
+<li><strong>XposedInstaller</strong>，这是Xposed的插件管理和功能控制APP，也就是说Xposed整体管控功能就是由这个APP来完成的，它包括启用Xposed插件功能，下载和启用指定插件APP，还可以禁用Xposed插件功能等。注意，这个app要正常无误得运行必须能拿到root权限。</li>
+<li><strong>Xposed</strong>，这个项目属于Xposed框架，其实它就是单独搞了一套xposed版的zygote。这个zygote会替换系统原生的zygote。所以，它需要由XposedInstaller在root之后放到/system/bin下。</li>
+<li><strong>XposedBridge</strong>，这个项目也是Xposed框架，它属于Xposed框架的Java部分，编译出来是一个XposedBridge.jar包。</li>
+<li><strong>XposedTools</strong>，Xposed和XposedBridge编译依赖于Android源码，而且还有一些定制化的东西。所以XposedTools就是用来帮助我们编译Xposed和XposedBridge的。</li>
+</ol>
+<h1 id="Xposed-安装"><a href="#Xposed-安装" class="headerlink" title="Xposed 安装"></a>Xposed 安装</h1><blockquote>
+<p>网上有很多中安装方法，在这里我们直接采取最简单的方法安装，直接打开应用市场（如：豌豆荚），搜索xPosed就会看见Xposed框架。</p>
+</blockquote>
+<h1 id="Xposed开发"><a href="#Xposed开发" class="headerlink" title="Xposed开发"></a>Xposed开发</h1><h2 id="Android-Studio-开发步骤"><a href="#Android-Studio-开发步骤" class="headerlink" title="Android Studio 开发步骤"></a>Android Studio 开发步骤</h2><h3 id="1-新建一个空安卓项目（带有activity也行）"><a href="#1-新建一个空安卓项目（带有activity也行）" class="headerlink" title="1. 新建一个空安卓项目（带有activity也行）"></a>1. 新建一个空安卓项目（带有activity也行）</h3><h3 id="2-在-AndroidManifest-xml中通过-meta-data-申明"><a href="#2-在-AndroidManifest-xml中通过-meta-data-申明" class="headerlink" title="2. 在 AndroidManifest.xml中通过 meta-data 申明:"></a>2. 在 AndroidManifest.xml中通过 meta-data 申明:</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;</span><br><span class="line">    package=&quot;com.example.dafeng.testforxposed&quot;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;application</span><br><span class="line">        android:allowBackup=&quot;true&quot;</span><br><span class="line">        android:icon=&quot;@mipmap/ic_launcher&quot;</span><br><span class="line">        android:label=&quot;@string/app_name&quot;</span><br><span class="line">        android:supportsRtl=&quot;true&quot;</span><br><span class="line">        android:theme=&quot;@style/AppTheme&quot;&gt;</span><br><span class="line">        &lt;activity</span><br><span class="line">            android:name=&quot;.MainActivity&quot;</span><br><span class="line">            android:label=&quot;@string/app_name&quot;</span><br><span class="line">            android:theme=&quot;@style/AppTheme.NoActionBar&quot;&gt;</span><br><span class="line">            &lt;intent-filter&gt;</span><br><span class="line">                &lt;action android:name=&quot;android.intent.action.MAIN&quot; /&gt;</span><br><span class="line"></span><br><span class="line">                &lt;category android:name=&quot;android.intent.category.LAUNCHER&quot; /&gt;</span><br><span class="line">            &lt;/intent-filter&gt;</span><br><span class="line">        &lt;/activity&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        &lt;!-- 1、标识自己是否为一个Xposed模块 --&gt;</span><br><span class="line">        &lt;meta-data</span><br><span class="line">            android:name=&quot;xposedmodule&quot;</span><br><span class="line">            android:value=&quot;true&quot;/&gt;</span><br><span class="line"></span><br><span class="line">        &lt;!-- 2、Xposed模块的描述信息 --&gt;</span><br><span class="line">        &lt;meta-data</span><br><span class="line">            android:name=&quot;xposeddescription&quot;</span><br><span class="line">            android:value=&quot;a sample for xposed&quot;/&gt;</span><br><span class="line"></span><br><span class="line">        &lt;!-- 3、支持Xposed框架的最低版本 --&gt;</span><br><span class="line">        &lt;meta-data</span><br><span class="line">            android:name=&quot;xposedminversion&quot;</span><br><span class="line">            android:value=&quot;82&quot;/&gt;</span><br><span class="line">    &lt;/application&gt;</span><br><span class="line"></span><br><span class="line">&lt;/manifest&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-在app／build-gradle中添加"><a href="#3-在app／build-gradle中添加" class="headerlink" title="3. 在app／build.gradle中添加"></a>3. 在app／build.gradle中添加</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">provided &apos;de.robv.android.xposed:api:[latest version]&apos;</span><br><span class="line">provided &apos;de.robv.android.xposed:api:[latest version]:sources&apos;</span><br><span class="line"></span><br><span class="line">eg:</span><br><span class="line">dependencies &#123;</span><br><span class="line">compile fileTree(dir: &apos;libs&apos;, include: [&apos;*.jar&apos;])</span><br><span class="line">androidTestCompile(&apos;com.android.support.test.espresso:espresso-core:2.2.2&apos;, &#123;</span><br><span class="line">    exclude group: &apos;com.android.support&apos;, module: &apos;support-annotations&apos;</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">provided &apos;de.robv.android.xposed:api:82&apos;</span><br><span class="line">provided &apos;de.robv.android.xposed:api:82:sources&apos;</span><br><span class="line"></span><br><span class="line">compile &apos;com.android.support:appcompat-v7:24.2.1&apos;</span><br><span class="line">compile &apos;com.android.support.constraint:constraint-layout:1.0.0-alpha8&apos;</span><br><span class="line">compile &apos;com.android.support:design:24.2.1&apos;</span><br><span class="line">testCompile &apos;junit:junit:4.12&apos;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">说明：</span><br><span class="line">1. 请留意，这个82是Xposed Framework API的版本号，叫做xposedminversion。</span><br><span class="line">2. xposedminversion可以在这里进行查询：</span><br><span class="line">https://bintray.com/rovo89/de.robv.android.xposed/api</span><br><span class="line">3. Xposed Framework API文档请参考：http://api.xposed.info/reference/packages.html</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-模块实现"><a href="#4-模块实现" class="headerlink" title="4. 模块实现"></a>4. 模块实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">package de.robv.android.xposed.mods.tutorial;</span><br><span class="line"></span><br><span class="line">import de.robv.android.xposed.XposedHelpers.findAndHookMethod;</span><br><span class="line">import de.robv.android.xposed.IXposedHookLoadPackage;</span><br><span class="line">import de.robv.android.xposed.XC_MethodHook;</span><br><span class="line">import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;</span><br><span class="line"></span><br><span class="line">public class Tutorial implements IXposedHookLoadPackage &#123;</span><br><span class="line">public void handleLoadPackage(final LoadPackageParam lpparam) throws Throwable &#123;</span><br><span class="line">    if (!lpparam.packageName.equals(&quot;com.android.systemui&quot;))</span><br><span class="line">        return;</span><br><span class="line"></span><br><span class="line">    findAndHookMethod(&quot;com.android.systemui.statusbar.policy.Clock&quot;, lpparam.classLoader, &quot;updateClock&quot;, new XC_MethodHook() &#123;</span><br><span class="line">        @Override</span><br><span class="line">        protected void beforeHookedMethod(MethodHookParam param) throws Throwable &#123;</span><br><span class="line">            // this will be called before the clock was updated by the original method</span><br><span class="line">        &#125;</span><br><span class="line">        @Override</span><br><span class="line">            protected void afterHookedMethod(MethodHookParam param) throws Throwable &#123;</span><br><span class="line">            // this will be called after the clock was updated by the original method</span><br><span class="line">        &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>beforeHookedMethod/afterHookedMethod会在被Hook函数之前/之后执行。</p>
+</blockquote>
+<h3 id="5-添加Hook类的索引"><a href="#5-添加Hook类的索引" class="headerlink" title="5. 添加Hook类的索引"></a>5. 添加Hook类的索引</h3><ol>
+<li>在assets目录下创建一个空文件，命名为xposed_init；</li>
+<li>在xposed_init中添加Hook类名：com.example.xposedtest.Tutorial</li>
+</ol>
+<h1 id="代码结构（示例）"><a href="#代码结构（示例）" class="headerlink" title="代码结构（示例）"></a>代码结构（示例）</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br></pre></td><td class="code"><pre><span class="line">package cn.wjdiankong.xposedhook;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line">import java.lang.reflect.Modifier;</span><br><span class="line"></span><br><span class="line">import android.location.GpsStatus;</span><br><span class="line">import android.location.Location;</span><br><span class="line">import android.location.LocationListener;</span><br><span class="line">import android.location.LocationManager;</span><br><span class="line">import android.util.Log;</span><br><span class="line">import de.robv.android.xposed.IXposedHookLoadPackage;</span><br><span class="line">import de.robv.android.xposed.XC_MethodHook;</span><br><span class="line">import de.robv.android.xposed.XposedBridge;</span><br><span class="line">import de.robv.android.xposed.XposedHelpers;</span><br><span class="line">import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;</span><br><span class="line"></span><br><span class="line">public class GPSHooker implements IXposedHookLoadPackage&#123;</span><br><span class="line"></span><br><span class="line">    private final String TAG = &quot;Xposed&quot;;</span><br><span class="line">    private LoadPackageParam mLpp;</span><br><span class="line"></span><br><span class="line">    public void log(String s)&#123;</span><br><span class="line">        Log.d(TAG, s);</span><br><span class="line">        XposedBridge.log(s);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    //不带参数的方法拦截</span><br><span class="line">    private void hook_method(String className, ClassLoader classLoader, String methodName,</span><br><span class="line">            Object... parameterTypesAndCallback)&#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            XposedHelpers.findAndHookMethod(className, classLoader, methodName, parameterTypesAndCallback);</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            XposedBridge.log(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    //带参数的方法拦截</span><br><span class="line">    private void hook_methods(String className, String methodName, XC_MethodHook xmh)&#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Class&lt;?&gt; clazz = Class.forName(className);</span><br><span class="line">            for (Method method : clazz.getDeclaredMethods())</span><br><span class="line">                if (method.getName().equals(methodName)</span><br><span class="line">                        &amp;&amp; !Modifier.isAbstract(method.getModifiers())</span><br><span class="line">                        &amp;&amp; Modifier.isPublic(method.getModifiers())) &#123;</span><br><span class="line">                    XposedBridge.hookMethod(method, xmh);</span><br><span class="line">                &#125;</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            XposedBridge.log(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void handleLoadPackage(LoadPackageParam lpp) throws Throwable &#123;</span><br><span class="line">        mLpp = lpp;</span><br><span class="line"></span><br><span class="line">        hook_method(&quot;android.net.wifi.WifiManager&quot;, mLpp.classLoader, &quot;getScanResults&quot;,</span><br><span class="line">                new XC_MethodHook()&#123;</span><br><span class="line">            /**</span><br><span class="line">             * Android提供了基于网络的定位服务和基于卫星的定位服务两种</span><br><span class="line">             * android.net.wifi.WifiManager的getScanResults方法</span><br><span class="line">             * Return the results of the latest access point scan.</span><br><span class="line">             * @return the list of access points found in the most recent scan.</span><br><span class="line">             */</span><br><span class="line">            @Override</span><br><span class="line">            protected void afterHookedMethod(MethodHookParam param)</span><br><span class="line">                    throws Throwable &#123;</span><br><span class="line">            	//返回空，就强制让apps使用gps定位信息</span><br><span class="line">                param.setResult(null);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        hook_method(&quot;android.telephony.TelephonyManager&quot;, mLpp.classLoader, &quot;getCellLocation&quot;,</span><br><span class="line">                new XC_MethodHook()&#123;</span><br><span class="line">            /**</span><br><span class="line">             * android.telephony.TelephonyManager的getCellLocation方法</span><br><span class="line">             * Returns the current location of the device.</span><br><span class="line">             * Return null if current location is not available.</span><br><span class="line">             */</span><br><span class="line">            @Override</span><br><span class="line">            protected void afterHookedMethod(MethodHookParam param)</span><br><span class="line">                    throws Throwable &#123;</span><br><span class="line">                param.setResult(null);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        hook_method(&quot;android.telephony.TelephonyManager&quot;, mLpp.classLoader, &quot;getNeighboringCellInfo&quot;,</span><br><span class="line">                new XC_MethodHook()&#123;</span><br><span class="line">            /**</span><br><span class="line">             * android.telephony.TelephonyManager类的getNeighboringCellInfo方法</span><br><span class="line">             * Returns the neighboring cell information of the device.</span><br><span class="line">             */</span><br><span class="line">            @Override</span><br><span class="line">            protected void afterHookedMethod(MethodHookParam param)</span><br><span class="line">                    throws Throwable &#123;</span><br><span class="line">                param.setResult(null);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        hook_methods(&quot;android.location.LocationManager&quot;, &quot;requestLocationUpdates&quot;,</span><br><span class="line">                new XC_MethodHook() &#123;</span><br><span class="line">            /**</span><br><span class="line">             * android.location.LocationManager类的requestLocationUpdates方法</span><br><span class="line">             * 其参数有4个：</span><br><span class="line">             * String provider, long minTime, float minDistance,LocationListener listener</span><br><span class="line">             * Register for location updates using the named provider, and a pending intent</span><br><span class="line">             */</span><br><span class="line">            @Override</span><br><span class="line">            protected void beforeHookedMethod(MethodHookParam param) throws Throwable &#123;</span><br><span class="line"></span><br><span class="line">                if (param.args.length == 4 &amp;&amp; (param.args[0] instanceof String)) &#123;</span><br><span class="line">                    //位置监听器,当位置改变时会触发onLocationChanged方法</span><br><span class="line">                    LocationListener ll = (LocationListener)param.args[3];</span><br><span class="line"></span><br><span class="line">                    Class&lt;?&gt; clazz = LocationListener.class;</span><br><span class="line">                    Method m = null;</span><br><span class="line">                    for (Method method : clazz.getDeclaredMethods()) &#123;</span><br><span class="line">                        if (method.getName().equals(&quot;onLocationChanged&quot;)) &#123;</span><br><span class="line">                            m = method;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    try &#123;</span><br><span class="line">                        if (m != null) &#123;</span><br><span class="line">                            Object[] args = new Object[1];</span><br><span class="line">                            Location l = new Location(LocationManager.GPS_PROVIDER);</span><br><span class="line">                            //台北经纬度:121.53407,25.077796</span><br><span class="line">                            double la=121.53407;</span><br><span class="line">                            double lo=25.077796;</span><br><span class="line">                            l.setLatitude(la);</span><br><span class="line">                            l.setLongitude(lo);</span><br><span class="line">                            args[0] = l;</span><br><span class="line">                            m.invoke(ll, args);</span><br><span class="line">                            XposedBridge.log(&quot;fake location: &quot; + la + &quot;, &quot; + lo);</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; catch (Exception e) &#123;</span><br><span class="line">                        XposedBridge.log(e);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        hook_methods(&quot;android.location.LocationManager&quot;, &quot;getGpsStatus&quot;,</span><br><span class="line">                new XC_MethodHook()&#123;</span><br><span class="line">            /**</span><br><span class="line">             * android.location.LocationManager类的getGpsStatus方法</span><br><span class="line">             * 其参数只有1个：GpsStatus status</span><br><span class="line">             * Retrieves information about the current status of the GPS engine.</span><br><span class="line">             * This should only be called from the &#123;@link GpsStatus.Listener#onGpsStatusChanged&#125;</span><br><span class="line">             * callback to ensure that the data is copied atomically.</span><br><span class="line">             *</span><br><span class="line">             */</span><br><span class="line">            @Override</span><br><span class="line">            protected void afterHookedMethod(MethodHookParam param) throws Throwable &#123;</span><br><span class="line">                GpsStatus gss = (GpsStatus)param.getResult();</span><br><span class="line">                if (gss == null)</span><br><span class="line">                    return;</span><br><span class="line"></span><br><span class="line">                Class&lt;?&gt; clazz = GpsStatus.class;</span><br><span class="line">                Method m = null;</span><br><span class="line">                for (Method method : clazz.getDeclaredMethods()) &#123;</span><br><span class="line">                    if (method.getName().equals(&quot;setStatus&quot;)) &#123;</span><br><span class="line">                        if (method.getParameterTypes().length &gt; 1) &#123;</span><br><span class="line">                            m = method;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                m.setAccessible(true);</span><br><span class="line">                //make the apps belive GPS works fine now</span><br><span class="line">                int svCount = 5;</span><br><span class="line">                int[] prns = &#123;1, 2, 3, 4, 5&#125;;</span><br><span class="line">                float[] snrs = &#123;0, 0, 0, 0, 0&#125;;</span><br><span class="line">                float[] elevations = &#123;0, 0, 0, 0, 0&#125;;</span><br><span class="line">                float[] azimuths = &#123;0, 0, 0, 0, 0&#125;;</span><br><span class="line">                int ephemerisMask = 0x1f;</span><br><span class="line">                int almanacMask = 0x1f;</span><br><span class="line">                //5 satellites are fixed</span><br><span class="line">                int usedInFixMask = 0x1f;</span><br><span class="line">                try &#123;</span><br><span class="line">                    if (m != null) &#123;</span><br><span class="line">                        m.invoke(gss,svCount, prns, snrs, elevations, azimuths, ephemerisMask, almanacMask, usedInFixMask);</span><br><span class="line">                        param.setResult(gss);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; catch (Exception e) &#123;</span><br><span class="line">                    XposedBridge.log(e);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/07/19/qemu/" rel="next" title="How to debug qemu devices">
+                <i class="fa fa-chevron-left"></i> How to debug qemu devices
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">idongxia</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">Artikel</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#标题"><span class="nav-number">1.</span> <span class="nav-text">标题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Xposed-简介"><span class="nav-number">2.</span> <span class="nav-text">Xposed 简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Xposed做法："><span class="nav-number">2.1.</span> <span class="nav-text">Xposed做法：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hook的大概原理："><span class="nav-number">2.2.</span> <span class="nav-text">hook的大概原理：</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Xposed-组件"><span class="nav-number">3.</span> <span class="nav-text">Xposed 组件</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Xposed包含如下几个工程："><span class="nav-number">3.1.</span> <span class="nav-text">Xposed包含如下几个工程：</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Xposed-安装"><span class="nav-number">4.</span> <span class="nav-text">Xposed 安装</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Xposed开发"><span class="nav-number">5.</span> <span class="nav-text">Xposed开发</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Android-Studio-开发步骤"><span class="nav-number">5.1.</span> <span class="nav-text">Android Studio 开发步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-新建一个空安卓项目（带有activity也行）"><span class="nav-number">5.1.1.</span> <span class="nav-text">1. 新建一个空安卓项目（带有activity也行）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-在-AndroidManifest-xml中通过-meta-data-申明"><span class="nav-number">5.1.2.</span> <span class="nav-text">2. 在 AndroidManifest.xml中通过 meta-data 申明:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-在app／build-gradle中添加"><span class="nav-number">5.1.3.</span> <span class="nav-text">3. 在app／build.gradle中添加</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-模块实现"><span class="nav-number">5.1.4.</span> <span class="nav-text">4. 模块实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-添加Hook类的索引"><span class="nav-number">5.1.5.</span> <span class="nav-text">5. 添加Hook类的索引</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#代码结构（示例）"><span class="nav-number">6.</span> <span class="nav-text">代码结构（示例）</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">idongxia</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/schemes/muse.js?v=7.1.2"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+  
+
+<script src="//cdn1.lncld.net/static/js/3.11.1/av-min.js"></script>
+
+
+
+<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+<script>
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'utzKntLleFpYpbLMukFBuRNb-gzGzoHsz',
+    appKey: 'QzvmcivNyJTepWaD1Fuwpuci',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: '' || 'zh-cn'
+  });
+</script>
+
+
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
