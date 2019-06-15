@@ -1571,6 +1571,177 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/04/01/duoxiancheng/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="idongxia">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="idongxia">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2018/04/01/duoxiancheng/" class="post-title-link" itemprop="url">多线程-共享全局变量问题</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2018-04-01 12:00:00" itemprop="dateCreated datePublished" datetime="2018-04-01T12:00:00+08:00">2018-04-01</time>
+            
+
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Kommentare: </span>
+                <a href="/2018/04/01/duoxiancheng/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/04/01/duoxiancheng/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="多线程-共享全局变量问题"><a href="#多线程-共享全局变量问题" class="headerlink" title="多线程-共享全局变量问题"></a>多线程-共享全局变量问题</h1><h3 id="多线程开发可能遇到的问题"><a href="#多线程开发可能遇到的问题" class="headerlink" title="多线程开发可能遇到的问题"></a>多线程开发可能遇到的问题</h3><p>假设两个线程t1和t2都要对全局变量g_num(默认是0)进行加1运算，t1和t2都各对g_num加10次，g_num的最终的结果应该为20。</p>
+<p>但是由于是多线程同时操作，有可能出现下面情况：</p>
+<ol>
+<li>在g_num=0时，t1取得g_num=0。此时系统把t1调度为”sleeping”状态，把t2转换为”running”状态，t2也获得g_num=0</li>
+<li>然后t2对得到的值进行加1并赋给g_num，使得g_num=1</li>
+<li>然后系统又把t2调度为”sleeping”，把t1转为”running”。线程t1又把它之前得到的0加1后赋值给g_num。</li>
+<li>这样导致虽然t1和t2都对g_num加1，但结果仍然是g_num=1</li>
+</ol>
+<h4 id="测试1"><a href="#测试1" class="headerlink" title="测试1"></a>测试1</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">import threading</span><br><span class="line">import time</span><br><span class="line"></span><br><span class="line">g_num = 0</span><br><span class="line"></span><br><span class="line">def work1(num):</span><br><span class="line">    global g_num</span><br><span class="line">    for i in range(num):</span><br><span class="line">        g_num += 1</span><br><span class="line">    print(&quot;----in work1, g_num is %d---&quot;%g_num)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def work2(num):</span><br><span class="line">    global g_num</span><br><span class="line">    for i in range(num):</span><br><span class="line">        g_num += 1</span><br><span class="line">    print(&quot;----in work2, g_num is %d---&quot;%g_num)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">print(&quot;---线程创建之前g_num is %d---&quot;%g_num)</span><br><span class="line"></span><br><span class="line">t1 = threading.Thread(target=work1, args=(100,))</span><br><span class="line">t1.start()</span><br><span class="line"></span><br><span class="line">t2 = threading.Thread(target=work2, args=(100,))</span><br><span class="line">t2.start()</span><br><span class="line"></span><br><span class="line">while len(threading.enumerate()) != 1:</span><br><span class="line">    time.sleep(1)</span><br><span class="line"></span><br><span class="line">print(&quot;2个线程对同一个全局变量操作之后的最终结果是:%s&quot; % g_num)</span><br></pre></td></tr></table></figure>
+
+<h4 id="运行结果："><a href="#运行结果：" class="headerlink" title="运行结果："></a>运行结果：</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">---线程创建之前g_num is 0---</span><br><span class="line">----in work1, g_num is 100---</span><br><span class="line">----in work2, g_num is 200---</span><br><span class="line">2个线程对同一个全局变量操作之后的最终结果是:200</span><br></pre></td></tr></table></figure>
+
+<h4 id="测试2"><a href="#测试2" class="headerlink" title="测试2"></a>测试2</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">import threading</span><br><span class="line">import time</span><br><span class="line"></span><br><span class="line">g_num = 0</span><br><span class="line"></span><br><span class="line">def work1(num):</span><br><span class="line">    global g_num</span><br><span class="line">    for i in range(num):</span><br><span class="line">        g_num += 1</span><br><span class="line">    print(&quot;----in work1, g_num is %d---&quot;%g_num)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def work2(num):</span><br><span class="line">    global g_num</span><br><span class="line">    for i in range(num):</span><br><span class="line">        g_num += 1</span><br><span class="line">    print(&quot;----in work2, g_num is %d---&quot;%g_num)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">print(&quot;---线程创建之前g_num is %d---&quot;%g_num)</span><br><span class="line"></span><br><span class="line">t1 = threading.Thread(target=work1, args=(1000000,))</span><br><span class="line">t1.start()</span><br><span class="line"></span><br><span class="line">t2 = threading.Thread(target=work2, args=(1000000,))</span><br><span class="line">t2.start()</span><br><span class="line"></span><br><span class="line">while len(threading.enumerate()) != 1:</span><br><span class="line">    time.sleep(1)</span><br><span class="line"></span><br><span class="line">print(&quot;2个线程对同一个全局变量操作之后的最终结果是:%s&quot; % g_num)</span><br></pre></td></tr></table></figure>
+
+<h4 id="运行结果：-1"><a href="#运行结果：-1" class="headerlink" title="运行结果："></a>运行结果：</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">---线程创建之前g_num is 0---</span><br><span class="line">----in work1, g_num is 1088005---</span><br><span class="line">----in work2, g_num is 1286202---</span><br><span class="line">2个线程对同一个全局变量操作之后的最终结果是:1286202</span><br></pre></td></tr></table></figure>
+
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><ul>
+<li>如果多个线程同时对同一个全局变量操作，会出现资源竞争问题，从而数据结果会不正确</li>
+</ul>
+<p>炮姐镇楼</p>
+<img src="//idongxia.github.io/2018/04/01/duoxiancheng/1.jpg">
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/03/07/angr/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1986,7 +2157,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">8</span>
+                    <span class="site-state-item-count">9</span>
                     <span class="site-state-item-name">Artikel</span>
                   </a>
                 </div>
