@@ -1571,6 +1571,184 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/04/02/java/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="idongxia">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="idongxia">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2018/04/02/java/" class="post-title-link" itemprop="url">反序列化</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2018-04-02 12:00:00" itemprop="dateCreated datePublished" datetime="2018-04-02T12:00:00+08:00">2018-04-02</time>
+            
+
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Kommentare: </span>
+                <a href="/2018/04/02/java/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/04/02/java/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="反序列化-通过粘贴执行代码"><a href="#反序列化-通过粘贴执行代码" class="headerlink" title="反序列化+通过粘贴执行代码"></a>反序列化+通过粘贴执行代码</h1><p>鉴于.NET Framework 中对反序列化问题的实际利用，信息保障公司NCC Group的研究者认为识别.NET Framework  4.7.2方法和使用反序列化的类可能是有用的，因为它可以帮助安全研究人员和开发人员找到并解决潜在问题。研究的初步结果可以从以下网址下载：</p>
+<p><a href="https://www.nccgroup.trust/uk/our-research/use-of-deserialisation-in-.net-framework-methods-and-classes/?research=Whitepapers" target="_blank" rel="noopener">https://www.nccgroup.trust/uk/our-research/use-of-deserialisation-in-.net-framework-methods-and-classes/?research=Whitepapers</a></p>
+<p>8月与微软分享调查结果后，研究人员在代码文档中添加了新的安全说明，如下所示：<a href="https://github.com/dotnet/dotnet-api-docs/pull/502。我们的白皮书还应该包含.NET" target="_blank" rel="noopener">https://github.com/dotnet/dotnet-api-docs/pull/502。我们的白皮书还应该包含.NET</a></p>
+<p> Framework中几乎所有的方法和类，这些方法和类在编写时都有安全说明，这些方法和类可能也很有用。</p>
+<p><strong>通过粘贴和反序列化执行代码</strong></p>
+<p>其中最有趣的发现之一是从剪贴板粘贴后可以利用的反序列化问题。</p>
+<p>在.NET框架中，对象可以序列化并存储在剪贴板的数据对象中、这些对象可以在粘贴时自动反序列化。与任何其他反序列化问题类似，当攻击者在剪贴板中创建任意对象时，可以利用这一点。虽然无法找到将任意对象远程存储到剪贴板的方法，但这对于破坏沙箱环境仍然有用（沙箱环境中无法执行直接命令但允许剪贴板对象通过）。当受影响的.NET应用程序以更高的权限运行时，权限升级也可能是另一种途径，但是在没有限制的情况下，可能还有其他更简单的技术可以在本地执行此操作。</p>
+<p><strong>技术细节</strong></p>
+<p>数据对象类使用BinaryFormatter反序列化某些剪贴板对象。</p>
+<p>以下格式通过System.Windows.DataFormats，System.Windows.Forms.DataFormats受到影响：</p>
+<p>CommaSeparatedValue，Dib，Dif，Locale（有被影响的潜在可能），PenData，Riff，Serializable，StringFormat，SymbolicLink，Tiff，WaveAudio</p>
+<p>这些与以下格式名称相同：</p>
+<p>Csv，DeviceIndependentBitmap，DataInterchangeFormat，Locale（可能），PenData，RiffAudio，WindowsForms10PersistentObject，System.String，SymbolicLink，TaggedImageFileFormat，WaveAudio</p>
+<p>这已作为插件添加到ysoserial.net项目：</p>
+<p>https ：//github.com/pwntester/ysoserial.net/blob/master/ysoserial/Plugins/ClipboardPlugin.cs</p>
+<p>因此可以存储有效负载使用以下命令进入剪贴板：</p>
+<p>ysoserial.exe -p剪贴板-c calc -F System.String</p>
+<p><strong>受影响**</strong>对象**</p>
+<p>除了从剪贴板读取特殊对象的应用程序之外，任何使用文本框、密码框或RichTextBox的WPF应用程序[也会受到影响。</p>
+<p>下列应用程序易受攻击：</p>
+<p>PowerShell ISE</p>
+<p>Visual Studio（右上角快速启动）</p>
+<p>net - 修补[6]（单击编辑菜单或粘贴在文本框中）</p>
+<p>LINQPad - 修补[7]</p>
+<p><strong>建议</strong></p>
+<p>由于微软已将此作为预期行为接受，因此在处理剪贴板中的数据对象时，将由底层应用程序使用未受影响的数据格式(如文本、Rtf、Tiff或位图)来确保它们不会受到攻击。在使用沙箱环境时，建议不允许剪贴板访问或将其限制为文本对象。从剪贴板粘贴代码执行相关的风险应该基于这样一个事实，即攻击者可能首先需要执行一些代码，以便在剪贴板中存储任意对象。</p>
+<p>炮姐镇楼</p>
+<img src="//idongxia.github.io/2018/04/02/java/2.jpg">
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/04/01/duoxiancheng/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2157,7 +2335,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-count">10</span>
                     <span class="site-state-item-name">Artikel</span>
                   </a>
                 </div>

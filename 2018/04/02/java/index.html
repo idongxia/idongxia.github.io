@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.2">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.2">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.2" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.1.2',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="反序列化+通过粘贴执行代码鉴于.NET Framework 中对反序列化问题的实际利用，信息保障公司NCC Group的研究者认为识别.NET Framework  4.7.2方法和使用反序列化的类可能是有用的，因为它可以帮助安全研究人员和开发人员找到并解决潜在问题。研究的初步结果可以从以下网址下载： https://www.nccgroup.trust/uk/our-research/use-o">
+<meta property="og:type" content="article">
+<meta property="og:title" content="反序列化">
+<meta property="og:url" content="https://idongxia.github.io/2018/04/02/java/index.html">
+<meta property="og:site_name" content="idongxia">
+<meta property="og:description" content="反序列化+通过粘贴执行代码鉴于.NET Framework 中对反序列化问题的实际利用，信息保障公司NCC Group的研究者认为识别.NET Framework  4.7.2方法和使用反序列化的类可能是有用的，因为它可以帮助安全研究人员和开发人员找到并解决潜在问题。研究的初步结果可以从以下网址下载： https://www.nccgroup.trust/uk/our-research/use-o">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://idongxia.github.io/2018/04/02/java/2.jpg">
+<meta property="og:updated_time" content="2018-04-02T04:00:00.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="反序列化">
+<meta name="twitter:description" content="反序列化+通过粘贴执行代码鉴于.NET Framework 中对反序列化问题的实际利用，信息保障公司NCC Group的研究者认为识别.NET Framework  4.7.2方法和使用反序列化的类可能是有用的，因为它可以帮助安全研究人员和开发人员找到并解决潜在问题。研究的初步结果可以从以下网址下载： https://www.nccgroup.trust/uk/our-research/use-o">
+<meta name="twitter:image" content="https://idongxia.github.io/2018/04/02/java/2.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://idongxia.github.io/2018/04/02/java/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>反序列化 | idongxia</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">idongxia</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Navigationsleiste an/ausschalten">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Startseite</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archiv</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+    
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://idongxia.github.io/2018/04/02/java/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="idongxia">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="idongxia">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">反序列化
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Veröffentlicht am</span>
+              
+
+              
+                
+              
+
+              <time title="Erstellt: 2018-04-02 12:00:00" itemprop="dateCreated datePublished" datetime="2018-04-02T12:00:00+08:00">2018-04-02</time>
+            
+
+            
+          </span>
+
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Kommentare: </span>
+                <a href="/2018/04/02/java/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2018/04/02/java/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="反序列化-通过粘贴执行代码"><a href="#反序列化-通过粘贴执行代码" class="headerlink" title="反序列化+通过粘贴执行代码"></a>反序列化+通过粘贴执行代码</h1><p>鉴于.NET Framework 中对反序列化问题的实际利用，信息保障公司NCC Group的研究者认为识别.NET Framework  4.7.2方法和使用反序列化的类可能是有用的，因为它可以帮助安全研究人员和开发人员找到并解决潜在问题。研究的初步结果可以从以下网址下载：</p>
+<p><a href="https://www.nccgroup.trust/uk/our-research/use-of-deserialisation-in-.net-framework-methods-and-classes/?research=Whitepapers" target="_blank" rel="noopener">https://www.nccgroup.trust/uk/our-research/use-of-deserialisation-in-.net-framework-methods-and-classes/?research=Whitepapers</a></p>
+<p>8月与微软分享调查结果后，研究人员在代码文档中添加了新的安全说明，如下所示：<a href="https://github.com/dotnet/dotnet-api-docs/pull/502。我们的白皮书还应该包含.NET" target="_blank" rel="noopener">https://github.com/dotnet/dotnet-api-docs/pull/502。我们的白皮书还应该包含.NET</a></p>
+<p> Framework中几乎所有的方法和类，这些方法和类在编写时都有安全说明，这些方法和类可能也很有用。</p>
+<p><strong>通过粘贴和反序列化执行代码</strong></p>
+<p>其中最有趣的发现之一是从剪贴板粘贴后可以利用的反序列化问题。</p>
+<p>在.NET框架中，对象可以序列化并存储在剪贴板的数据对象中、这些对象可以在粘贴时自动反序列化。与任何其他反序列化问题类似，当攻击者在剪贴板中创建任意对象时，可以利用这一点。虽然无法找到将任意对象远程存储到剪贴板的方法，但这对于破坏沙箱环境仍然有用（沙箱环境中无法执行直接命令但允许剪贴板对象通过）。当受影响的.NET应用程序以更高的权限运行时，权限升级也可能是另一种途径，但是在没有限制的情况下，可能还有其他更简单的技术可以在本地执行此操作。</p>
+<p><strong>技术细节</strong></p>
+<p>数据对象类使用BinaryFormatter反序列化某些剪贴板对象。</p>
+<p>以下格式通过System.Windows.DataFormats，System.Windows.Forms.DataFormats受到影响：</p>
+<p>CommaSeparatedValue，Dib，Dif，Locale（有被影响的潜在可能），PenData，Riff，Serializable，StringFormat，SymbolicLink，Tiff，WaveAudio</p>
+<p>这些与以下格式名称相同：</p>
+<p>Csv，DeviceIndependentBitmap，DataInterchangeFormat，Locale（可能），PenData，RiffAudio，WindowsForms10PersistentObject，System.String，SymbolicLink，TaggedImageFileFormat，WaveAudio</p>
+<p>这已作为插件添加到ysoserial.net项目：</p>
+<p>https ：//github.com/pwntester/ysoserial.net/blob/master/ysoserial/Plugins/ClipboardPlugin.cs</p>
+<p>因此可以存储有效负载使用以下命令进入剪贴板：</p>
+<p>ysoserial.exe -p剪贴板-c calc -F System.String</p>
+<p><strong>受影响**</strong>对象**</p>
+<p>除了从剪贴板读取特殊对象的应用程序之外，任何使用文本框、密码框或RichTextBox的WPF应用程序[也会受到影响。</p>
+<p>下列应用程序易受攻击：</p>
+<p>PowerShell ISE</p>
+<p>Visual Studio（右上角快速启动）</p>
+<p>net - 修补[6]（单击编辑菜单或粘贴在文本框中）</p>
+<p>LINQPad - 修补[7]</p>
+<p><strong>建议</strong></p>
+<p>由于微软已将此作为预期行为接受，因此在处理剪贴板中的数据对象时，将由底层应用程序使用未受影响的数据格式(如文本、Rtf、Tiff或位图)来确保它们不会受到攻击。在使用沙箱环境时，建议不允许剪贴板访问或将其限制为文本对象。从剪贴板粘贴代码执行相关的风险应该基于这样一个事实，即攻击者可能首先需要执行一些代码，以便在剪贴板中存储任意对象。</p>
+<p>炮姐镇楼</p>
+<img src="//idongxia.github.io/2018/04/02/java/2.jpg">
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/04/01/duoxiancheng/" rel="next" title="多线程-共享全局变量问题">
+                <i class="fa fa-chevron-left"></i> 多线程-共享全局变量问题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/05/05/gdb/" rel="prev" title="some useful gdb skills">
+                some useful gdb skills <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Inhaltsverzeichnis
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Übersicht
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">idongxia</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">10</span>
+                    <span class="site-state-item-name">Artikel</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#反序列化-通过粘贴执行代码"><span class="nav-number">1.</span> <span class="nav-text">反序列化+通过粘贴执行代码</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">idongxia</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Erstellt mit  <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Design – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.1.2</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.2"></script>
+
+  <script src="/js/motion.js?v=7.1.2"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/schemes/muse.js?v=7.1.2"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.2"></script>
+<script src="/js/post-details.js?v=7.1.2"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.2"></script>
+
+
+  
+
+  
+
+  
+
+  
+  
+
+<script src="//cdn1.lncld.net/static/js/3.11.1/av-min.js"></script>
+
+
+
+<script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+
+<script>
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'utzKntLleFpYpbLMukFBuRNb-gzGzoHsz',
+    appKey: 'QzvmcivNyJTepWaD1Fuwpuci',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: '' || 'zh-cn'
+  });
+</script>
+
+
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
