@@ -96,23 +96,13 @@
 
 
 
-  <meta name="description" content="AFL简述AFL号称是当前最高级的Fuzzing测试工具之一，由lcamtuf所开发。在众多安全会议白帽演讲中都介绍过这款工具，以及2016年defcon大会的CGC(Cyber  Grand Challenge，形式为机器自动挖掘并修补漏洞)大赛中多支队伍利用AFL fuzzing技术与符号执行(Symbolic  Execution)来实现漏洞挖掘，其中参赛队伍shellphish便是采用AF">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Finding bugs using AFL">
-<meta property="og:url" content="https://idongxia.github.io/2018/01/13/AFL/index.html">
+  <meta property="og:type" content="website">
+<meta property="og:title" content="idongxia">
+<meta property="og:url" content="https://idongxia.github.io/page/2/index.html">
 <meta property="og:site_name" content="idongxia">
-<meta property="og:description" content="AFL简述AFL号称是当前最高级的Fuzzing测试工具之一，由lcamtuf所开发。在众多安全会议白帽演讲中都介绍过这款工具，以及2016年defcon大会的CGC(Cyber  Grand Challenge，形式为机器自动挖掘并修补漏洞)大赛中多支队伍利用AFL fuzzing技术与符号执行(Symbolic  Execution)来实现漏洞挖掘，其中参赛队伍shellphish便是采用AF">
 <meta property="og:locale" content="default">
-<meta property="og:image" content="https://idongxia.github.io/AFL/core.png">
-<meta property="og:image" content="https://idongxia.github.io/AFL/core.png">
-<meta property="og:image" content="https://idongxia.github.io/AFL/out_dir.png">
-<meta property="og:image" content="https://idongxia.github.io/AFL/crashes.png">
-<meta property="og:image" content="https://idongxia.github.io/AFL/file.png">
-<meta property="og:updated_time" content="2018-01-13T04:00:00.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Finding bugs using AFL">
-<meta name="twitter:description" content="AFL简述AFL号称是当前最高级的Fuzzing测试工具之一，由lcamtuf所开发。在众多安全会议白帽演讲中都介绍过这款工具，以及2016年defcon大会的CGC(Cyber  Grand Challenge，形式为机器自动挖掘并修补漏洞)大赛中多支队伍利用AFL fuzzing技术与符号执行(Symbolic  Execution)来实现漏洞挖掘，其中参赛队伍shellphish便是采用AF">
-<meta name="twitter:image" content="https://idongxia.github.io/AFL/core.png">
+<meta name="twitter:title" content="idongxia">
 
 
 
@@ -120,7 +110,7 @@
 
   
   
-  <link rel="canonical" href="https://idongxia.github.io/2018/01/13/AFL/">
+  <link rel="canonical" href="https://idongxia.github.io/page/2/">
 
 
 
@@ -130,7 +120,7 @@
   };
 </script>
 
-  <title>Finding bugs using AFL | idongxia</title>
+  <title>idongxia</title>
   
 
 
@@ -178,7 +168,8 @@
     
   
 
-  <div class="container sidebar-position-left page-post-detail">
+  <div class="container sidebar-position-left 
+  page-home">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -278,9 +269,9 @@
           
           <div id="content" class="content">
             
-
-  <div id="posts" class="posts-expand">
+  <section id="posts" class="posts-expand">
     
+      
 
   
 
@@ -312,8 +303,10 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Finding bugs using AFL
-
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2018/01/13/AFL/" class="post-title-link" itemprop="url">Finding bugs using AFL</a>
               
             
           </h1>
@@ -386,7 +379,9 @@
       
 
       
-        <h1 id="AFL"><a href="#AFL" class="headerlink" title="AFL"></a>AFL</h1><h2 id="简述"><a href="#简述" class="headerlink" title="简述"></a>简述</h2><p>AFL号称是当前最高级的Fuzzing测试工具之一，由lcamtuf所开发。在众多安全会议白帽演讲中都介绍过这款工具，以及2016年defcon大会的CGC(Cyber  Grand Challenge，形式为机器自动挖掘并修补漏洞)大赛中多支队伍利用AFL fuzzing技术与符号执行(Symbolic  Execution)来实现漏洞挖掘，其中参赛队伍shellphish便是采用AFL(Fuzzing) + angr(Symbolic  Execution)技术。</p>
+        
+          
+            <h1 id="AFL"><a href="#AFL" class="headerlink" title="AFL"></a>AFL</h1><h2 id="简述"><a href="#简述" class="headerlink" title="简述"></a>简述</h2><p>AFL号称是当前最高级的Fuzzing测试工具之一，由lcamtuf所开发。在众多安全会议白帽演讲中都介绍过这款工具，以及2016年defcon大会的CGC(Cyber  Grand Challenge，形式为机器自动挖掘并修补漏洞)大赛中多支队伍利用AFL fuzzing技术与符号执行(Symbolic  Execution)来实现漏洞挖掘，其中参赛队伍shellphish便是采用AFL(Fuzzing) + angr(Symbolic  Execution)技术。</p>
 <p>AFLFuzzing工作原理：通过对源码进行重新编译时进行插桩（简称编译时插桩）的方式自动产生测试用例来探索二进制程序内部新的执行路径。</p>
 <p>与其他基于插桩技术的fuzzers相比，afl-fuzz具有较低的性能消耗，有各种高效的fuzzing策略和tricks最小化技巧，  不需要先行复杂的配置，能无缝处理复杂的现实中的程序。当然AFL也支持直接对没有源码的二进制程序进行测试，但需要QEMU的支持。</p>
 <p>本文主要是以入门使用为主，介绍如何使用AFL Fuzzing。</p>
@@ -439,6 +434,8 @@
 <h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>查看使程序崩溃的输入文件<img src="/AFL/file.png" alt="file">,可以查看文件内容,符合程序崩溃逻辑。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>此文章以简单的例子，是AFL Fuzzing工具跑起来，后续将深入分析AFL Fuzzing在实际项目中的应用。</p>
 
+          
+        
       
     </div>
 
@@ -461,28 +458,12 @@
       
 
       
-      
+
       
 
       
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/03/07/angr/" rel="prev" title="How to use angr for CTF">
-                How to use angr for CTF <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
       
-
-      
+        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -492,19 +473,18 @@
   </article>
 
 
-  </div>
+    
+  </section>
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="Vorherige Seite"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+  </nav>
+
 
 
           </div>
           
-
-  
-    <div class="comments" id="comments">
-    </div>
-
-  
-
-
 
         </div>
         
@@ -524,17 +504,8 @@
       
 
       
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            Inhaltsverzeichnis
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            Übersicht
-          </li>
-        </ul>
-      
 
-      <div class="site-overview-wrap sidebar-panel">
+      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -580,23 +551,6 @@
         </div>
       </div>
 
-      
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#AFL"><span class="nav-number">1.</span> <span class="nav-text">AFL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#简述"><span class="nav-number">1.1.</span> <span class="nav-text">简述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安装"><span class="nav-number">1.2.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AFL工作流程"><span class="nav-number">1.3.</span> <span class="nav-text">AFL工作流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFL工作原理简介"><span class="nav-number">1.3.1.</span> <span class="nav-text">AFL工作原理简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AFL-Fuzzing步骤"><span class="nav-number">1.3.2.</span> <span class="nav-text">AFL Fuzzing步骤</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#示例"><span class="nav-number">1.4.</span> <span class="nav-text">示例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#示例代码"><span class="nav-number">1.4.1.</span> <span class="nav-text">示例代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编译"><span class="nav-number">1.4.2.</span> <span class="nav-text">编译</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#准备环境"><span class="nav-number">1.4.3.</span> <span class="nav-text">准备环境</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#开始Fuzzing"><span class="nav-number">1.4.4.</span> <span class="nav-text">开始Fuzzing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定位crash"><span class="nav-number">1.4.5.</span> <span class="nav-text">定位crash</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结论"><span class="nav-number">1.4.6.</span> <span class="nav-text">结论</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">1.5.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
       
 
       
@@ -725,10 +679,6 @@
 
 
   
-  <script src="/js/scrollspy.js?v=7.1.2"></script>
-<script src="/js/post-details.js?v=7.1.2"></script>
-
-
 
   
 
@@ -774,8 +724,6 @@
 
 
 
-
-  
 
 
   
